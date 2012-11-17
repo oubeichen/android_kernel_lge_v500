@@ -1387,6 +1387,9 @@ int q6asm_open_read_v2_1(struct audio_client *ac,
 			rc);
 		goto fail_cmd;
 	}
+
+	ac->io_mode |= TUN_READ_IO_MODE;
+
 	return 0;
 fail_cmd:
 	return -EINVAL;
