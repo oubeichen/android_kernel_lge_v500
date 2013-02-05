@@ -1347,8 +1347,8 @@ int generic_segment_checks(const struct iovec *iov,
 }
 EXPORT_SYMBOL(generic_segment_checks);
 
-static int file_read_iter_actor(read_descriptor_t *desc, struct page *page,
-				unsigned long offset, unsigned long size)
+int file_read_iter_actor(read_descriptor_t *desc, struct page *page,
+			 unsigned long offset, unsigned long size)
 {
 	struct iov_iter *iter = desc->arg.data;
 	unsigned long copied = 0;
