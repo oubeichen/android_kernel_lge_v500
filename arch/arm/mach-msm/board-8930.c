@@ -2360,7 +2360,6 @@ static struct platform_device msm8930_device_rpm_regulator __devinitdata = {
 static struct platform_device *early_common_devices[] __initdata = {
 	&msm8960_device_dmov,
 	&msm_device_smd,
-	&msm8960_device_uart_gsbi5,
 	&msm_device_uart_dm6,
 	&msm_device_saw_core0,
 	&msm_device_saw_core1,
@@ -2930,6 +2929,8 @@ static struct msm_serial_hs_platform_data msm_uart_dm9_pdata;
 static void __init msm8930_cdp_init(void)
 {
 	int i, reg_size = 0;
+	int minor_ver = SOCINFO_VERSION_MINOR(socinfo_get_platform_version());
+	int major_ver = SOCINFO_VERSION_MAJOR(socinfo_get_platform_version());
 	if (socinfo_get_pmic_model() == PMIC_MODEL_PM8917)
 		msm8930_pm8917_pdata_fixup();
 	if (meminfo_init(SYS_MEMORY, SZ_256M) < 0)
@@ -2985,6 +2986,17 @@ static void __init msm8930_cdp_init(void)
 		msm_device_uart_dm9.dev.platform_data = &msm_uart_dm9_pdata;
 #endif
 		platform_device_register(&msm_device_uart_dm9);
+
+		/* For 8930 SGLTE serial console */
+		if (major_ver == 1) {
+			if (minor_ver == 0)
+				/* Add UART Serial for EVT1 device */
+				platform_device_register(
+					&msm8930_device_uart_gsbi10);
+		}
+	} else {
+		/* For 8930 Standalone serial console */
+		platform_device_register(&msm8960_device_uart_gsbi5);
 	}
 
 	msm_otg_pdata.phy_init_seq = hsusb_phy_init_seq;
