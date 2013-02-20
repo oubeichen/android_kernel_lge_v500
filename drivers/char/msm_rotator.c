@@ -2735,6 +2735,7 @@ msm_rotator_close(struct inode *inode, struct file *filp)
 	fd_info = (struct msm_rotator_fd_info *)filp->private_data;
 
 	mutex_lock(&msm_rotator_dev->rotator_lock);
+	msm_rotator_release_all_timeline();
 	if (--fd_info->ref_cnt > 0) {
 		mutex_unlock(&msm_rotator_dev->rotator_lock);
 		return 0;
