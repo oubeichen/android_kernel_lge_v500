@@ -3262,12 +3262,6 @@ static long msm_ioctl_config(struct file *fp, unsigned int cmd,
 		rc = msm_v4l2_evt_notify(config_cam->p_mctl, cmd, arg);
 		break;
 
-	case MSM_CAM_IOCTL_SET_MEM_MAP_INFO:
-		if (copy_from_user(&config_cam->mem_map, (void __user *)arg,
-				sizeof(struct msm_mem_map_info)))
-			rc = -EINVAL;
-		break;
-
 	case MSM_CAM_IOCTL_SET_MCTL_SDEV:{
 		struct msm_mctl_set_sdev_data set_data;
 		if (copy_from_user(&set_data, (void __user *)arg,
