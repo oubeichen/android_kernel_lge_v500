@@ -1073,6 +1073,19 @@ static inline unsigned long max_compute_capacity_of(int cpu)
 	return cpu_rq(cpu)->max_compute_capacity;
 }
 
+#ifdef CONFIG_ARCH_SCALE_INVARIANT_CPU_CAPACITY
+#define SCHED_ARCH_SCALE_POWER_SHIFT 10
+#endif
+static inline unsigned long compute_capacity_of(int cpu)
+{
+	return cpu_rq(cpu)->curr_compute_capacity;
+}
+
+static inline unsigned long max_compute_capacity_of(int cpu)
+{
+	return cpu_rq(cpu)->max_compute_capacity;
+}
+
 static inline void update_cpu_capacity(int cpu)
 {
 	int tmp_capacity = arch_get_cpu_capacity(cpu);
@@ -4023,8 +4036,11 @@ void update_group_power(struct sched_domain *sd, int cpu)
 		 * span the current group.
 		 */
 
-		for_each_cpu(cpu, sched_group_cpus(sdg))
+		for_each_cpu(cpu, sched_group_cpus(sdg)) {
 			power += power_of(cpu);
+			compute_capacity += compute_capacity_of(cpu);
+			max_compute_capacity += max_compute_capacity_of(cpu);
+		}
 	} else  {
 		/*
 		 * !SD_OVERLAP domains can assume that child groups
@@ -4034,6 +4050,10 @@ void update_group_power(struct sched_domain *sd, int cpu)
 		group = child->groups;
 		do {
 			power += group->sgp->power;
+			compute_capacity += group->sgp->compute_capacity;
+			max_compute_capacity +=
+				group->sgp->max_compute_capacity;
+
 			group = group->next;
 		} while (group != child->groups);
 	}
@@ -4041,7 +4061,6 @@ void update_group_power(struct sched_domain *sd, int cpu)
 	sdg->sgp->power = power;
 	sdg->sgp->compute_capacity = compute_capacity;
 	sdg->sgp->max_compute_capacity = max_compute_capacity;
-
 }
 
 /*
