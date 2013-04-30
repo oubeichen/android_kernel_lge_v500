@@ -1034,8 +1034,10 @@ msm_send_open_server_failed:
 	msm_drain_eventq(&pcam->eventData_q);
 	msm_destroy_v4l2_event_queue(&pcam_inst->eventHandle);
 
-	if (pmctl->mctl_release)
+	if (pmctl->mctl_release) {
 		pmctl->mctl_release(pmctl);
+		pmctl->mctl_release = NULL;
+	}
 mctl_open_failed:
 	if (pcam->use_count == 1) {
 #ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
