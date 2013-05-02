@@ -570,11 +570,17 @@ static int msm_server_control(struct msm_cam_server_dev *server_dev,
 #endif
 /* LGE_CHANGE_E, camera recovery patch, 2013.1.16, jungki.kim[End] */
 			return rc;
+		} else {
+			pr_err("%s: List is empty\n", __func__);
+			return -EINVAL;
 		}
 	}
 
 	rcmd = msm_dequeue(queue, list_control);
-	BUG_ON(!rcmd);
+	if (!rcmd) {
+		pr_err("%s: List is empty\n", __func__);
+		return -EINVAL;
+	}
 	D("%s Finished servicing ioctl\n", __func__);
 
 	ctrlcmd = (struct msm_ctrl_cmd *)(rcmd->command);
