@@ -2392,8 +2392,7 @@ static int get_prop_batt_capacity(struct pm8921_chg_chip *chip)
 	}
 
 	if (percent_soc <= 10)
-		pr_warn_ratelimited("low battery charge = %d%%\n",
-						percent_soc);
+		pr_debug("low battery charge = %d%%\n", percent_soc);
 
 	if (percent_soc <= chip->resume_charge_percent
 		&& get_prop_batt_status(chip) == POWER_SUPPLY_STATUS_FULL) {
