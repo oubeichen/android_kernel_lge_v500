@@ -2322,7 +2322,7 @@ static struct msm_thermal_data msm_thermal_pdata = {
 	.sensor_id = 7,
 #ifdef CONFIG_MACH_LGE
 	.poll_ms = 1000,
-	.limit_temp_degC = 93,
+	.limit_temp_degC = 75,
 #if defined(CONFIG_MACH_APQ8064_GK_KR)||defined(CONFIG_MACH_APQ8064_GKATT) || defined(CONFIG_MACH_APQ8064_GKOPENHK) || defined(CONFIG_MACH_APQ8064_GKOPENTW) || defined(CONFIG_MACH_APQ8064_GKSHBSG) || defined(CONFIG_MACH_APQ8064_AWIFI)
 	.limit_temp_degC_low = 20,
 #endif
@@ -2332,9 +2332,12 @@ static struct msm_thermal_data msm_thermal_pdata = {
 #endif
 	.temp_hysteresis_degC = 10,
 	.freq_step = 2,
+#ifdef CONFIG_INTELLI_THERMAL
+	.freq_control_mask = 0xf,
+#endif
 #if defined(CONFIG_MACH_APQ8064_AWIFI)
         // It is cause of MPdecision problem. so, changed to Higher value than Thermal_deamon's setting
-	.core_limit_temp_degC = 120,
+	.core_limit_temp_degC = 90,
 #else
 	.core_limit_temp_degC = 80,
 #endif
