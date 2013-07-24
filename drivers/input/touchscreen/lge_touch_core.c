@@ -3849,6 +3849,31 @@ static int LGE_touch_mouse_init(void)
 }
 #endif
 
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+static ssize_t lge_touch_sweep2wake_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	size_t count = 0;
+
+	count += sprintf(buf, "%d\n", s2w_switch);
+
+	return count;
+}
+
+static ssize_t lge_touch_sweep2wake_dump(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t count)
+{
+	if (buf[0] >= '0' && buf[0] <= '2' && buf[1] == '\n')
+                if (s2w_switch != buf[0] - '0')
+		        s2w_switch = buf[0] - '0';
+
+	return count;
+}
+
+static DEVICE_ATTR(sweep2wake, (S_IWUSR|S_IRUGO),
+	lge_touch_sweep2wake_show, lge_touch_sweep2wake_dump);
+#endif
+
 static int touch_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
 	struct lge_touch_data *ts;
@@ -4093,6 +4118,8 @@ static int touch_probe(struct i2c_client *client, const struct i2c_device_id *id
 	register_early_suspend(&ts->early_suspend);
 #endif
 
+        lge_touch_sysfs_init();
+
 	/* Register sysfs for making fixed communication path to framework layer */
 	ret = sysdev_class_register(&lge_touch_sys_class);
 	if (ret < 0) {
@@ -4178,6 +4205,8 @@ static int touch_remove(struct i2c_client *client)
 	sysdev_class_unregister(&lge_touch_sys_class);
 
 	unregister_early_suspend(&ts->early_suspend);
+
+        lge_touch_sysfs_deinit();
 
 	pm_runtime_set_suspended(&client->dev);
 	pm_runtime_disable(&client->dev);
