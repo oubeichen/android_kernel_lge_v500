@@ -36,6 +36,10 @@
 
 #include <linux/input/lge_touch_core.h>
 
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+#include <linux/input/sweep2wake.h>
+#endif
+
 #ifdef CUST_G_TOUCH
 #include "./DS4/RefCode.h"
 #include "./DS4/RefCode_PDTScan.h"
@@ -150,6 +154,25 @@ int ghost_detection_count = 0;
 #if defined(CONFIG_HAS_EARLYSUSPEND)
 static void touch_early_suspend(struct early_suspend *h);
 static void touch_late_resume(struct early_suspend *h);
+#endif
+
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+/* gives back true if only one touch is recognized */
+bool is_single_touch(struct lge_touch_data *ts)
+{
+        int i = 0, cnt = 0;
+
+        for( i = 0; i < ts->pdata->caps->max_id; i++ ) {
+                if ((!ts->ts_data.curr_data[i].state) ||
+                    (ts->ts_data.curr_data[i].state == ABS_RELEASE))
+                        continue;
+                else cnt++;
+        }
+        if (cnt == 1)
+                return true;
+        else
+                return false;
+}
 #endif
 
 /* Auto Test interface for some model */
@@ -3994,7 +4017,12 @@ static int touch_probe(struct i2c_client *client, const struct i2c_device_id *id
 
 		ret = request_threaded_irq(client->irq, touch_irq_handler,
 				touch_thread_irq_handler,
-				ts->pdata->role->irqflags | IRQF_ONESHOT, client->name, ts);
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+				ts->pdata->role->irqflags | IRQF_ONESHOT | IRQF_TRIGGER_LOW | IRQF_NO_SUSPEND,
+#else
+				ts->pdata->role->irqflags | IRQF_ONESHOT,
+#endif
+				client->name, ts);
 
 		if (ret < 0) {
 			TOUCH_ERR_MSG("request_irq failed. use polling mode\n");
@@ -4161,6 +4189,10 @@ static void touch_early_suspend(struct early_suspend *h)
 	struct lge_touch_data *ts =
 			container_of(h, struct lge_touch_data, early_suspend);
 
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+        scr_suspended = true;
+#endif
+
 	if (unlikely(touch_debug_mask & DEBUG_TRACE))
 		TOUCH_DEBUG_MSG("\n");
 
@@ -4175,6 +4207,10 @@ static void touch_early_suspend(struct early_suspend *h)
 	}
 #endif
 
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+        if (s2w_switch == 0)
+#endif
+        {
 	if (ts->pdata->role->operation_mode)
 		disable_irq(ts->client->irq);
 	else
@@ -4193,12 +4229,21 @@ static void touch_early_suspend(struct early_suspend *h)
 	release_all_ts_event(ts);
 
 	touch_power_cntl(ts, ts->pdata->role->suspend_pwr);
+        }
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+        else if (s2w_switch > 0)
+                enable_irq_wake(ts->client->irq);
+#endif
 }
 
 static void touch_late_resume(struct early_suspend *h)
 {
 	struct lge_touch_data *ts =
 			container_of(h, struct lge_touch_data, early_suspend);
+
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+        scr_suspended = false;
+#endif
 
 	if (unlikely(touch_debug_mask & DEBUG_TRACE))
 		TOUCH_DEBUG_MSG("\n");
@@ -4208,6 +4253,10 @@ static void touch_late_resume(struct early_suspend *h)
 		return;
 	}
 
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+        if (s2w_switch == 0)
+#endif
+        {
 	touch_power_cntl(ts, ts->pdata->role->resume_pwr);
 #ifdef CUST_G_TOUCH
 	if (ts->pdata->role->ghost_detection_enable) {
@@ -4226,6 +4275,11 @@ static void touch_late_resume(struct early_suspend *h)
 				msecs_to_jiffies(ts->pdata->role->booting_delay));
 	else
 		queue_delayed_work(touch_wq, &ts->work_init, 0);
+        }
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+        else if (s2w_switch > 0)
+                disable_irq_wake(ts->client->irq);
+#endif
 }
 #endif
 

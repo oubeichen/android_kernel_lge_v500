@@ -1084,4 +1084,9 @@ config TOUCHSCREEN_ATMEL_KNOCK_ON
         default n
         help
         Say Y here if you have an Atmel Maxtouch based touchscreen.
+
+config TOUCHSCREEN_SWEEP2WAKE
+	tristate "Sweep2Wake for touchscreens"
+	default n
+
 endif
