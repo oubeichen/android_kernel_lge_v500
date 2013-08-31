@@ -449,7 +449,7 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 			continue;
 
 		oom_score_adj = p->signal->oom_score_adj;
-		if (oom_score_adj < min_score_adj) {
+		if (oom_score_adj < selected_oom_score_adj[proc_type]) {
 			task_unlock(p);
 			continue;
 		}
@@ -474,11 +474,8 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 		}
 #endif
 
-		if (selected[proc_type]) {
-			if (oom_score_adj < selected_oom_score_adj[proc_type])
-				continue;
-			if (oom_score_adj == selected_oom_score_adj[proc_type] &&
-			    tasksize <= selected_tasksize[proc_type])
+		if (selected[proc_type] && oom_score_adj == selected_oom_score_adj[proc_type] &&
+			    tasksize <= selected_tasksize[proc_type]) {
 				continue;
 		}
 		selected[proc_type] = p;
