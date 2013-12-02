@@ -2966,9 +2966,6 @@ android_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *c)
 	 * It needs to handle control requests before it is enabled.
 	 */
 	if (value < 0)
-		value = acc_ctrlrequest(cdev, c);
-
-	if (value < 0)
 		value = composite_setup(gadget, c);
 
 	spin_lock_irqsave(&cdev->lock, flags);
@@ -2995,7 +2992,6 @@ static void android_disconnect(struct usb_gadget *gadget)
 	   accessory function is not actually enabled,
 	   so we need to inform it when we are disconnected.
 	 */
-	acc_disconnect();
 
 	spin_lock_irqsave(&cdev->lock, flags);
 	dev->connected = 0;
