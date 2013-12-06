@@ -4,6 +4,10 @@ SUBLEVEL = 87
 EXTRAVERSION =
 NAME = Saber-toothed Squirrel
 
+# Flag to disable/enable Autoplatform001 build
+AUTOPLAT_001 := false
+#AUTOPLAT_001 := true
+
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
 # More info can be located in ./README
