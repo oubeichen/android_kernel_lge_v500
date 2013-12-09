@@ -171,6 +171,10 @@ static struct early_suspend early_suspend;
 
 static u32 mdp_irq;
 
+#if defined(AUTOPLAT_001)
+static int splash_logo(char *splash_screen_addr_virtual, u32 splash_screen_size);
+#endif /* AUTOPLAT_001 */
+
 static uint32 mdp_prim_panel_type = NO_PANEL;
 #ifndef CONFIG_FB_MSM_MDP22
 
@@ -1504,7 +1508,7 @@ int mdp_ppp_pipe_wait(void)
 		ret = wait_for_completion_interruptible_timeout(&mdp_ppp_comp,
 								5 * HZ);
 		if (!ret)
-			printk(KERN_ERR "%s: Timed out waiting for the MDP.\n",
+			pr_err(KERN_ERR "%s: Timed out waiting for the MDP.\n",
 				__func__);
 	}
 
@@ -1635,7 +1639,7 @@ void mdp_enable_irq(uint32 term)
 
 	spin_lock_irqsave(&mdp_lock, irq_flags);
 	if (mdp_irq_mask & term) {
-		printk(KERN_ERR "%s: MDP IRQ term-0x%x is already set, mask=%x irq=%d\n",
+		pr_err(KERN_ERR "%s: MDP IRQ term-0x%x is already set, mask=%x irq=%d\n",
 				__func__, term, mdp_irq_mask, mdp_irq_enabled);
 	} else {
 		mdp_irq_mask |= term;
@@ -1656,7 +1660,7 @@ void mdp_disable_irq(uint32 term)
 
 	spin_lock_irqsave(&mdp_lock, irq_flags);
 	if (!(mdp_irq_mask & term)) {
-		printk(KERN_ERR "%s: MDP IRQ term-0x%x is NOT set, mask=%x irq=%d\n",
+		pr_err(KERN_ERR "%s: MDP IRQ term-0x%x is NOT set, mask=%x irq=%d\n",
 				__func__, term, mdp_irq_mask, mdp_irq_enabled);
 	} else {
 		mdp_irq_mask &= ~term;
@@ -1672,7 +1676,7 @@ void mdp_disable_irq_nosync(uint32 term)
 {
 	spin_lock(&mdp_lock);
 	if (!(mdp_irq_mask & term)) {
-		printk(KERN_ERR "%s: MDP IRQ term-0x%x is NOT set, mask=%x irq=%d\n",
+		pr_err(KERN_ERR "%s: MDP IRQ term-0x%x is NOT set, mask=%x irq=%d\n",
 				__func__, term, mdp_irq_mask, mdp_irq_enabled);
 	} else {
 		mdp_irq_mask &= ~term;
@@ -2436,7 +2440,11 @@ static int mdp_on(struct platform_device *pdev)
 	if (!(mfd->cont_splash_done)) {
 		if (mfd->panel.type == MIPI_VIDEO_PANEL)
 			mdp4_dsi_video_splash_done();
-
+#if defined(AUTOPLAT_001)
+		MDP_OUTP(MDP_BASE + 0xD0000, 0);
+		MDP_OUTP(MDP_BASE + 0xC0000, 0);
+		msleep(20);
+#endif /* AUTOPLAT_001 */
 		/* Clks are enabled in probe.
 		Disabling clocks now */
 		mdp_clk_ctrl(0);
@@ -2700,7 +2708,7 @@ static int mdp_irq_clk_setup(struct platform_device *pdev,
 	ret = request_irq(mdp_irq, mdp_isr, IRQF_DISABLED, "MDP", 0);
 #endif
 	if (ret) {
-		printk(KERN_ERR "mdp request_irq() failed!\n");
+		pr_err(KERN_ERR "mdp request_irq() failed!\n");
 		return ret;
 	}
 	disable_irq(mdp_irq);
@@ -2744,7 +2752,7 @@ static int mdp_irq_clk_setup(struct platform_device *pdev,
 	mdp_clk = clk_get(&pdev->dev, "core_clk");
 	if (IS_ERR(mdp_clk)) {
 		ret = PTR_ERR(mdp_clk);
-		printk(KERN_ERR "can't get mdp_clk error:%d!\n", ret);
+		pr_err(KERN_ERR "can't get mdp_clk error:%d!\n", ret);
 		free_irq(mdp_irq, 0);
 		return ret;
 	}
@@ -2961,11 +2969,12 @@ static int mdp_probe(struct platform_device *pdev)
 	if (platform_device_add_data
 	    (msm_fb_dev, pdev->dev.platform_data,
 	     sizeof(struct msm_fb_panel_data))) {
-		printk(KERN_ERR "mdp_probe: platform_device_add_data failed!\n");
+		pr_err(KERN_ERR "mdp_probe: platform_device_add_data failed!\n");
 		rc = -ENOMEM;
 		goto mdp_probe_err;
 	}
 
+#if !defined(AUTOPLAT_001)
 	if (mdp_pdata) {
 		if (mdp_pdata->cont_splash_enabled &&
 				 mfd->panel_info.pdest == DISPLAY_1) {
@@ -3013,7 +3022,74 @@ static int mdp_probe(struct platform_device *pdev)
 
 		mfd->cont_splash_done = (1 - mdp_pdata->cont_splash_enabled);
 	}
+#else
+	if (mdp_pdata) {
+		if (mdp_pdata->cont_splash_enabled &&
+			((mfd->panel_info.pdest == DISPLAY_1) || (mfd->panel_info.pdest == DISPLAY_2))) {
+			char *cp = NULL;
+			uint32 bpp = 3;
+			uint32 fb_size = 0;
+			uint32 fb_addr = 0;
+			u32 splash_screen_size = 0;
+			u32 splash_screen_addr = 0;
+			/*read panel wxh and calculate splash screen
+			  size*/
+			if (mfd->panel_info.pdest == DISPLAY_1) {
+				mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_ON, FALSE);
+				mdp_clk_ctrl(1);
+			}
 
+			if (mfd->panel_info.pdest == DISPLAY_2) {
+				fb_size = inpdw(MDP_BASE + 0x50000);
+				fb_addr = inpdw(MDP_BASE + 0x50010);
+				mdp_pdata->ext_splash_screen_size = ((fb_size) >> 16 & 0x00000FFF) *
+						(fb_size & 0x00000FFF) * bpp;
+				mdp_pdata->ext_splash_screen_addr = fb_addr;
+				splash_screen_size = mdp_pdata->ext_splash_screen_size;
+				splash_screen_addr = mdp_pdata->ext_splash_screen_addr;
+			} else {
+				fb_size = inpdw(MDP_BASE + 0x90004);
+				fb_addr = inpdw(MDP_BASE + 0x90008);
+				mdp_pdata->splash_screen_size = ((fb_size) >> 16 & 0x00000FFF) *
+						(fb_size & 0x00000FFF) * bpp;
+				mdp_pdata->splash_screen_addr = fb_addr;
+				splash_screen_size = mdp_pdata->splash_screen_size;
+				splash_screen_addr = mdp_pdata->splash_screen_addr;
+			}
+
+			mfd->copy_splash_buf = dma_alloc_coherent(NULL,
+					splash_screen_size,
+					(dma_addr_t *) &(mfd->copy_splash_phys),
+					GFP_KERNEL);
+
+			if (!mfd->copy_splash_buf) {
+				pr_err("DMA ALLOC FAILED for SPLASH\n");
+				return -ENOMEM;
+			}
+			cp = (char *)ioremap(
+					splash_screen_addr,
+					splash_screen_size);
+			if (!cp) {
+				pr_err("IOREMAP FAILED for SPLASH\n");
+				return -ENOMEM;
+			}
+			memcpy(mfd->copy_splash_buf, cp,
+					splash_screen_size);
+			if (mfd->panel_info.pdest == DISPLAY_2) {
+				MDP_OUTP(MDP_BASE + 0x50010,
+					mfd->copy_splash_buf);
+			} else {
+				MDP_OUTP(MDP_BASE + 0x90008,
+					mfd->copy_splash_buf);
+				if (splash_logo(cp, splash_screen_size) < 0)
+					pr_err("bak splash logo fail...\n");
+			}
+			iounmap(cp);
+		}
+
+		mfd->cont_splash_done = (1 - mdp_pdata->cont_splash_enabled);
+	}
+#endif /* AUTOPLAT_001 */
 	/* data chain */
 	pdata = msm_fb_dev->dev.platform_data;
 	pdata->on = mdp_on;
@@ -3129,7 +3205,7 @@ static int mdp_probe(struct platform_device *pdev)
 		if (mfd->panel_info.pdest == DISPLAY_1)
 			mfd->dma = &dma2_data;
 		else {
-			printk(KERN_ERR "Invalid Selection of destination panel\n");
+			pr_err(KERN_ERR "Invalid Selection of destination panel\n");
 			rc = -ENODEV;
 			mdp_clk_ctrl(0);
 			goto mdp_probe_err;
@@ -3170,7 +3246,7 @@ static int mdp_probe(struct platform_device *pdev)
 		if (mfd->panel_info.pdest == DISPLAY_1)
 			mfd->dma = &dma2_data;
 		else {
-			printk(KERN_ERR "Invalid Selection of destination panel\n");
+			pr_err(KERN_ERR "Invalid Selection of destination panel\n");
 			rc = -ENODEV;
 			mdp_clk_ctrl(0);
 			goto mdp_probe_err;
@@ -3286,7 +3362,7 @@ static int mdp_probe(struct platform_device *pdev)
 		break;
 #endif
 	default:
-		printk(KERN_ERR "mdp_probe: unknown device type!\n");
+		pr_err(KERN_ERR "mdp_probe: unknown device type!\n");
 		rc = -ENODEV;
 		mdp_clk_ctrl(0);
 		goto mdp_probe_err;
@@ -3419,7 +3495,7 @@ void mdp_footswitch_ctrl(boolean on)
 
 	mutex_unlock(&mdp_suspend_mutex);
 }
-
+#if !defined(AUTOPLAT_001)
 void mdp_free_splash_buffer(struct msm_fb_data_type *mfd)
 {
 	if (mfd->copy_splash_buf) {
@@ -3430,6 +3506,25 @@ void mdp_free_splash_buffer(struct msm_fb_data_type *mfd)
 		mfd->copy_splash_buf = NULL;
 	}
 }
+#else
+void mdp_free_splash_buffer(struct msm_fb_data_type *mfd)
+{
+	u32 splash_screen_size = 0;
+	if (mfd->panel_info.pdest == DISPLAY_2) {
+		splash_screen_size = mdp_pdata->ext_splash_screen_size;
+	} else {
+		splash_screen_size = mdp_pdata->splash_screen_size;
+	}
+
+	if (mfd->copy_splash_buf) {
+		dma_free_coherent(NULL,	splash_screen_size,
+			mfd->copy_splash_buf,
+			(dma_addr_t) mfd->copy_splash_phys);
+
+		mfd->copy_splash_buf = NULL;
+	}
+}
+#endif /* AUTOPLAT_001 */
 
 #ifdef CONFIG_PM
 static void mdp_suspend_sub(void)
@@ -3459,7 +3554,7 @@ static int mdp_suspend(struct platform_device *pdev, pm_message_t state)
 	if (pdev->id == 0) {
 		mdp_suspend_sub();
 		if (mdp_current_clk_on) {
-			printk(KERN_WARNING"MDP suspend failed\n");
+			pr_err(KERN_WARNING"MDP suspend failed\n");
 			return -EBUSY;
 		}
 	}
@@ -3528,7 +3623,7 @@ static int __init mdp_driver_init(void)
 
 	ret = mdp_register_driver();
 	if (ret) {
-		printk(KERN_ERR "mdp_register_driver() failed!\n");
+		pr_err(KERN_ERR "mdp_register_driver() failed!\n");
 		return ret;
 	}
 
