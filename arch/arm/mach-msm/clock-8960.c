@@ -5661,10 +5661,22 @@ static struct clk_lookup msm_clocks_8064[] = {
 			    "msm-dai-q6-mi2s"),
 	CLK_LOOKUP("osr_clk",		mi2s_osr_clk.c,
 			    "msm-dai-q6-mi2s"),
+#if defined (AUTOPLAT_001)
+	CLK_LOOKUP("bit_clk",		mi2s_bit_clk.c,
+			    "apq8064_cpudai_lpa.0"),
+	CLK_LOOKUP("osr_clk",		mi2s_osr_clk.c,
+			    "apq8064_cpudai_lpa.0"),
+#endif /* AUTOPLAT_001 */
 	CLK_LOOKUP("bit_clk",		codec_i2s_mic_bit_clk.c,
 			   "msm-dai-q6.1"),
 	CLK_LOOKUP("osr_clk",		codec_i2s_mic_osr_clk.c,
 			   "msm-dai-q6.1"),
+#if defined (AUTOPLAT_001)
+	CLK_LOOKUP("bit_clk",		codec_i2s_mic_bit_clk.c,
+			   "apq8064_cpudai_lpa.5"),
+	CLK_LOOKUP("osr_clk",		codec_i2s_mic_osr_clk.c,
+			   "apq8064_cpudai_lpa.5"),
+#endif /* AUTOPLAT_001 */
 	CLK_LOOKUP("bit_clk",		spare_i2s_mic_bit_clk.c,
 			   "msm-dai-q6.5"),
 	CLK_LOOKUP("osr_clk",		spare_i2s_mic_osr_clk.c,
@@ -5677,6 +5689,12 @@ static struct clk_lookup msm_clocks_8064[] = {
 			   "msm-dai-q6.4"),
 	CLK_LOOKUP("osr_clk",		spare_i2s_spkr_osr_clk.c,
 			   "msm-dai-q6.4"),
+#if defined (AUTOPLAT_001)
+	CLK_LOOKUP("bit_clk",		spare_i2s_spkr_bit_clk.c,
+			   "apq8064_cpudai_lpa.3"),
+	CLK_LOOKUP("osr_clk",		spare_i2s_spkr_osr_clk.c,
+			   "apq8064_cpudai_lpa.3"),
+#endif /* AUTOPLAT_001 */
 	CLK_LOOKUP("pcm_clk",		pcm_clk.c,		"msm-dai-q6.2"),
 	CLK_LOOKUP("pcm_clk",		pcm_clk.c,		"msm-dai-q6.3"),
 	CLK_LOOKUP("sps_slimbus_clk",	sps_slimbus_clk.c,	""),
