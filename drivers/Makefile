@@ -148,3 +148,6 @@ obj-$(CONFIG_LGE_BROADCAST_ONESEG) += broadcast/
 
 #FeliCa
 obj-$(CONFIG_LGE_FELICA) 	+= felica/
+
+#Exfat driver
+obj-y				+= exfat/
