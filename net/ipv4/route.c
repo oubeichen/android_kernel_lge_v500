@@ -109,6 +109,7 @@
 #include <net/rtnetlink.h>
 #ifdef CONFIG_SYSCTL
 #include <linux/sysctl.h>
+#include <linux/kmemleak.h>
 #endif
 #include <net/secure_seq.h>
 
@@ -1817,17 +1818,15 @@ static struct dst_entry *ipv4_dst_check(struct dst_entry *dst, u32 cookie)
 static void ipv4_dst_destroy(struct dst_entry *dst)
 {
 	struct rtable *rt = (struct rtable *) dst;
-	struct inet_peer *peer = (rt != NULL) ? rt->peer : NULL;
+	struct inet_peer *peer = rt->peer;
 
-	if(rt != NULL){ //minjeon.kim@lge.com, for kernel crash
-		if (rt->fi) {
-			fib_info_put(rt->fi);
-			rt->fi = NULL;
-		}
-		if (peer) {
-			rt->peer = NULL;
-			inet_putpeer(peer);
-		}
+	if (rt->fi) {
+		fib_info_put(rt->fi);
+		rt->fi = NULL;
+	}
+	if (peer) {
+		rt->peer = NULL;
+		inet_putpeer(peer);
 	}
 }
 
