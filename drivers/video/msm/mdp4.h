@@ -32,17 +32,10 @@ extern u32 mdp_max_clk;
 
 extern u64 mdp_max_bw;
 
-#if defined(CONFIG_FB_MSM_MIPI_LGIT_VIDEO_WUXGA_PT) || defined(CONFIG_FB_MSM_MIPI_LGIT_VIDEO_WUXGA_INVERSE_PT) || defined(CONFIG_FB_MSM_MIPI_LGIT_VIDEO_FHD_INVERSE_PT_PANEL)
-extern u32 mdp_bw_ab_factor;
-extern u32 mdp_bw_ib_factor;
-#define MDP4_BW_AB_DEFAULT_FACTOR (200)	/* 2.00 */
-#define MDP4_BW_IB_DEFAULT_FACTOR (210)	/* 2.10 */
-#else
 extern u32 mdp_bw_ab_factor;
 extern u32 mdp_bw_ib_factor;
 #define MDP4_BW_AB_DEFAULT_FACTOR (115)	/* 1.15 */
 #define MDP4_BW_IB_DEFAULT_FACTOR (150)	/* 1.5 */
-#endif
 #define MDP_BUS_SCALE_AB_STEP (0x4000000)
 
 #define MDP4_OVERLAYPROC0_BASE	0x10000
@@ -609,9 +602,8 @@ void mdp4_overlay0_done_dsi_cmd(int cndx);
 void mdp4_primary_rdptr(void);
 void mdp4_dsi_cmd_overlay(struct msm_fb_data_type *mfd);
 int mdp4_overlay_commit(struct fb_info *info);
-void mdp4_overlay_commit_finish(struct fb_info *info);
-int mdp4_dsi_video_pipe_commit(int cndx, int wait, u32 *release_busy);
-int mdp4_dsi_cmd_pipe_commit(int cndx, int wait, u32 *release_busy);
+int mdp4_dsi_video_pipe_commit(int cndx, int wait);
+int mdp4_dsi_cmd_pipe_commit(int cndx, int wait);
 int mdp4_lcdc_pipe_commit(int cndx, int wait);
 int mdp4_dsi_cmd_update_cnt(int cndx);
 void mdp4_dsi_rdptr_init(int cndx);
