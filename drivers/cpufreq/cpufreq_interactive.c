@@ -31,6 +31,7 @@
 #include <linux/slab.h>
 #include <asm/cputime.h>
 #include <linux/hotplug.h>
+#include <linux/kernel_stat.h>
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/cpufreq_interactive.h>
