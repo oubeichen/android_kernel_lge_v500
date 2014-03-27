@@ -34,6 +34,10 @@
 #include <mach/msm_xo.h>
 #include <mach/msm_hsusb.h>
 
+#ifdef CONFIG_BLX
+#include <linux/blx.h>
+#endif
+
 #ifdef CONFIG_LGE_PM
 #include <mach/board_lge.h>
 
@@ -2360,6 +2364,11 @@ static int get_prop_batt_status(struct pm8921_chg_chip *chip)
 #endif
 #endif		
 
+#ifdef CONFIG_BLX
+        if (pm8921_bms_get_percent_charge() >= get_charginglimit())
+		if (batt_state == POWER_SUPPLY_STATUS_CHARGING)
+			batt_state = POWER_SUPPLY_STATUS_FULL;
+#endif
 
 	pr_debug("batt_state = %d fsm_state = %d \n",batt_state, fsm_state);
 	return batt_state;
@@ -5390,6 +5399,11 @@ static void eoc_worker(struct work_struct *work)
 	} else {
 		count = 0;
 	}
+#ifdef CONFIG_BLX
+	if (pm8921_bms_get_percent_charge() >= get_charginglimit()) {
+		count = CONSECUTIVE_COUNT;
+	}
+#endif
 
 	if (count == CONSECUTIVE_COUNT) {
 		count = 0;
@@ -7188,7 +7202,11 @@ static int __devinit pm8921_charger_probe(struct platform_device *pdev)
 	chip->safe_current_ma = pdata->safe_current_ma;
 	chip->uvd_voltage_mv = pdata->uvd_thresh_voltage;
 	chip->resume_voltage_delta = pdata->resume_voltage_delta;
+#ifdef CONFIG_BLX
+	chip->resume_charge_percent = get_charginglimit() - 1;
+#else
 	chip->resume_charge_percent = pdata->resume_charge_percent;
+#endif
 	chip->term_current = pdata->term_current;
 	chip->vbat_channel = pdata->charger_cdata.vbat_channel;
 	chip->batt_temp_channel = pdata->charger_cdata.batt_temp_channel;
