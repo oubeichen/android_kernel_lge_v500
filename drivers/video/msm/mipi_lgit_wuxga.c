@@ -31,10 +31,6 @@ static struct dsi_buf lgit_rx_buf;
 static struct dsi_buf lgit_camera_tx_buf;
 static struct dsi_buf lgit_shutdown_tx_buf;
 
-#ifdef CONFIG_GAMMA_CONTROL
-struct dsi_cmd_desc new_color_vals[33];
-#endif
-
 static int __init mipi_lgit_lcd_init(void);
 static bool lgit_lcd_cabc_state(void);
 
@@ -130,15 +126,10 @@ int mipi_lgit_lcd_on(struct platform_device *pdev)
 
 //LGE_UPDATE_S hj.eum@lge.com : adding change mipi mode to write register setting of LCD IC
 	//MIPI_OUTP(MIPI_DSI_BASE + 0x38, 0x10000000);     //HS mode
-#ifdef CONFIG_GAMMA_CONTROL
-	cnt = mipi_dsi_cmds_tx(&lgit_tx_buf,
-		new_color_vals,
-		mipi_lgit_pdata->power_on_set_size_1);
-#else
+
 	cnt = mipi_dsi_cmds_tx(&lgit_tx_buf,
 		mipi_lgit_pdata->power_on_set_1,
 		mipi_lgit_pdata->power_on_set_size_1);
-#endif
 	if (cnt < 0)
 		return cnt;
 
@@ -284,53 +275,6 @@ static bool lgit_lcd_cabc_state(void)
 }
 #endif
 
-#ifdef CONFIG_GAMMA_CONTROL
-
-#define RED 1
-#define GREEN 2
-#define BLUE 3
-#define CONTRAST 5
-#define BRIGHTNESS 6
-#define SATURATION 7
-
-void update_vals(int type, int array_pos, int val)
-{
-	int i;
-
-	switch(type) {
-		case RED:
-			new_color_vals[5].payload[array_pos] = val;
-			new_color_vals[6].payload[array_pos] = val;
-			break;
-		case GREEN:
-			new_color_vals[7].payload[array_pos] = val;
-			new_color_vals[8].payload[array_pos] = val;
-			break;
-		case BLUE:
-			new_color_vals[9].payload[array_pos] = val;
-			new_color_vals[10].payload[array_pos] = val;
-			break;
-		case CONTRAST:
-			for (i = 5; i <= 10; i++)
-				new_color_vals[i].payload[type] = val;
-			break;
-		case BRIGHTNESS:
-			for (i = 5; i <= 10; i++)
-				new_color_vals[i].payload[type] = val;
-			break;
-		case SATURATION:
-			for (i = 5; i <= 10; i++)
-				new_color_vals[i].payload[type] = val;
-			break;
-		default:
-			pr_info("%s - Wrong value - abort.\n", __FUNCTION__);
-			return;
-	}
-
-	pr_info("%s - Updating display GAMMA settings.\n", __FUNCTION__);
-}
-#endif
-
 static int mipi_lgit_lcd_probe(struct platform_device *pdev)
 {
 #if defined(CONFIG_LGE_R63311_COLOR_ENGINE)
@@ -357,10 +301,6 @@ static int mipi_lgit_lcd_probe(struct platform_device *pdev)
 	err = device_create_file(&pdev->dev, &dev_attr_cabc_off);
 	if(err < 0)
 		printk("[LCD][DEBUG] %s : Cannot create the sysfs\n" , __func__);
-#endif
-
-#ifdef CONFIG_GAMMA_CONTROL
-	memcpy((void *) new_color_vals, (void *) mipi_lgit_pdata->power_on_set_1, sizeof(new_color_vals));
 #endif
 
 	return 0;
