@@ -28,21 +28,41 @@
 
 #define MIM_TIME_INTERVAL_MS 10
 
-static u64 touch_time_stamp;
+/* extern */
+bool is_touching;
+unsigned long freq_boosted_time;
+unsigned long time_stamp;
+
+void touchboost_func(void);
+unsigned int get_input_boost_freq(void);
+
+static struct workqueue_struct *input_boost_wq;
+static struct work_struct input_boost_work;
+
+static void do_input_boost(struct work_struct *work)
+{
+	touchboost_func();
+}
 
 static void boost_input_event(struct input_handle *handle,
                 unsigned int type, unsigned int code, int value)
 {
-	u64 now = ktime_to_ms(ktime_get());
+	unsigned long now = ktime_to_ms(ktime_get());
 
-	if (now - touch_time_stamp < MIM_TIME_INTERVAL_MS)
+	if (now - freq_boosted_time < MIM_TIME_INTERVAL_MS)
 		return;
 
-	if (boostpulse_duration_val > 50)
-		idle_counter = 0;
-
-	touch_time_stamp = now;
-	boostpulse_endtime = now + boostpulse_duration_val;
+	if (work_pending(&input_boost_work))
+		return;
+	
+	if (!is_touching)
+	{
+		queue_work_on(0, input_boost_wq, &input_boost_work);
+		gpu_idle = false;
+		is_touching = true;
+	}
+	idle_counter = -10;
+	freq_boosted_time = time_stamp = now;
 }
 
 static int boost_input_connect(struct input_handler *handler,
@@ -111,6 +131,13 @@ static struct input_handler boost_input_handler = {
 #pragma GCC diagnostic ignored "-Wunused-result"
 static int init(void)
 {
+	input_boost_wq = alloc_workqueue("input_boost_wq", WQ_FREEZABLE | WQ_HIGHPRI, 0);
+
+	if (!input_boost_wq)
+		return -EFAULT;
+
+	INIT_WORK(&input_boost_work, do_input_boost);
+
 	input_register_handler(&boost_input_handler);
 	return 0;
 }
