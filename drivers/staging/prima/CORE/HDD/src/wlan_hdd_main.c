@@ -397,7 +397,6 @@ static void hdd_vos_trace_enable(VOS_MODULE_ID moduleId, v_U32_t bitmask)
   --------------------------------------------------------------------------*/
 static void hdd_wdi_trace_enable(wpt_moduleid moduleId, v_U32_t bitmask)
 {
-#ifdef WLAN_DEBUG
    wpt_tracelevel level;
 
    /* if the bitmask is the default value, then a bitmask was not
@@ -422,7 +421,6 @@ static void hdd_wdi_trace_enable(wpt_moduleid moduleId, v_U32_t bitmask)
       level++;
       bitmask >>= 1;
    }
-#endif
 }
 
 /*
