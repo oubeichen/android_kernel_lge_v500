@@ -404,7 +404,6 @@ static void hdd_wdi_trace_enable(wpt_moduleid moduleId, v_U32_t bitmask)
    }
 #endif
 }
-#endif
 
 int hdd_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 {
