@@ -52,7 +52,7 @@
 #define MIN_FREQUENCY_UP_THRESHOLD		(11)
 #define MAX_FREQUENCY_UP_THRESHOLD		(100)
 #define MIN_FREQUENCY_DOWN_DIFFERENTIAL		(1)
-#define DBS_INPUT_EVENT_MIN_FREQ		(1026000)
+#define DBS_INPUT_EVENT_MIN_FREQ		(1134000)
 #define DEF_UI_DYNAMIC_SAMPLING_RATE		(40000)
 #define DBS_UI_SAMPLING_MIN_TIMEOUT		(30)
 #define DBS_UI_SAMPLING_MAX_TIMEOUT		(1000)
@@ -60,7 +60,7 @@
 
 #define DEF_FREQ_STEP				(25)
 #define DEF_STEP_UP_EARLY_HISPEED		(702000)
-#define DEF_STEP_UP_INTERIM_HISPEED		(1350000)
+#define DEF_STEP_UP_INTERIM_HISPEED		(1566000)
 #define DEF_SAMPLING_EARLY_HISPEED_FACTOR	(2)
 #define DEF_SAMPLING_INTERIM_HISPEED_FACTOR	(3)
 
@@ -96,8 +96,8 @@ freq_table_idx pre_freq_idx[SUP_CORE_NUM] = {};
 
 #if defined(SMART_UP_SLOW_UP_AT_HIGH_FREQ)
 
-#define SUP_SLOW_UP_FREQUENCY 		(1350000)
-#define SUP_HIGH_SLOW_UP_FREQUENCY 	(1512000)
+#define SUP_SLOW_UP_FREQUENCY 		(1566000)
+#define SUP_HIGH_SLOW_UP_FREQUENCY 	(1728000)
 #define SUP_SLOW_UP_LOAD 		(90)
 
 typedef struct {
@@ -1163,7 +1163,7 @@ static ssize_t store_step_up_early_hispeed(struct kobject *a,
 	int ret;
 	ret = sscanf(buf, "%u", &input);
 
-	if (ret != 1 || input > 2265600 ||
+	if (ret != 1 || input > 1728000 ||
 			input < 0) {
 		return -EINVAL;
 	}
@@ -1178,7 +1178,7 @@ static ssize_t store_step_up_interim_hispeed(struct kobject *a,
 	int ret;
 	ret = sscanf(buf, "%u", &input);
 
-	if (ret != 1 || input > 1512000 ||
+	if (ret != 1 || input > 1728000 ||
 			input < 0) {
 		return -EINVAL;
 	}
