@@ -415,10 +415,6 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 #ifdef CONFIG_ZRAM_FOR_ANDROID
 	atomic_set(&s_reclaim.lmk_running, 1);
 #endif
-#ifdef CONFIG_MACH_LGE
-	if (lowmem_deathpending && time_before_eq(jiffies, lowmem_deathpending_timeout))
-		return 0;
-#endif
 	rcu_read_lock();
 	for_each_process(tsk) {
 		struct task_struct *p;
@@ -739,9 +735,6 @@ static void __exit lowmem_exit(void)
 		class_remove_file(kcompcache_class, &class_attr_rtcc_daemon);
 		class_destroy(kcompcache_class);
 	}
-#endif
-#ifdef CONFIG_MACH_LGE
-	task_free_unregister(&task_nb);
 #endif
 }
 
