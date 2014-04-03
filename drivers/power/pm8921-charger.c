@@ -2933,7 +2933,7 @@ static void __pm8921_charger_vbus_draw(unsigned int mA)
 		rc = pm_chg_iusbmax_set(the_chip, i);
 #endif
 
-		if (rc) {
+		if (rc)
 			pr_err("unable to set iusb to %d rc = %d\n", i, rc);
 	}
 }
