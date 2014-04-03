@@ -25,10 +25,10 @@
 #include <linux/earlysuspend.h>
 
 #define INTELLI_PLUG_MAJOR_VERSION	3
-#define INTELLI_PLUG_MINOR_VERSION	0
+#define INTELLI_PLUG_MINOR_VERSION	1
 
-#define DEF_SAMPLING_MS			(60)
-#define BUSY_SAMPLING_MS		(30)
+#define DEF_SAMPLING_MS			(40)
+#define BUSY_SAMPLING_MS		(20)
 
 #define BUSY_PERSISTENCE		10
 #define DUAL_CORE_PERSISTENCE		7
@@ -43,7 +43,7 @@ static DEFINE_MUTEX(intelli_plug_mutex);
 static struct delayed_work intelli_plug_work;
 static struct workqueue_struct *intelliplug_wq;
 
-static unsigned int sampling_time = 0;
+static unsigned int sampling_time = 10;
 static unsigned int sampling_time_on = 10;
 static unsigned int persist_count = 0;
 static unsigned int busy_persist_count = 0;
@@ -149,11 +149,15 @@ static void intelli_plug_active_eval_fn(unsigned int status)
 
 	if (status == 1) {
 		sampling_time_on = 10;
-		sampling_time = 0;
+		sampling_time = 10;
+		if (!delayed_work_pending(&intelli_plug_work))
+			queue_delayed_work_on(0, intelliplug_wq, &intelli_plug_work,
+					msecs_to_jiffies(sampling_time_on));
 	} else {
 		sampling_time_on = 500;
 		sampling_time = 250;
 		flush_workqueue(intelliplug_wq);
+		cancel_delayed_work(&intelli_plug_work);
 	}
 }
 
@@ -179,7 +183,7 @@ static ssize_t store_intelli_plug_active(struct kobject *kobj,
 }
 
 static struct kobj_attribute intelli_plug_active_attr =
-	__ATTR(intelli_plug_active, 0644, show_intelli_plug_active,
+	__ATTR(intelli_plug_active, 0664, show_intelli_plug_active,
 			store_intelli_plug_active);
 
 static struct kobj_attribute eco_mode_active_attr =
@@ -457,12 +461,10 @@ static void intelli_plug_work_fn(struct work_struct *work)
 			}
 		} else if (debug_intelli_plug)
 			pr_info("intelli_plug is suspened!\n");
-	}
-	if (atomic_read(&intelli_plug_active) == 0)
-		sampling_time = 60;
 
-	queue_delayed_work_on(0, intelliplug_wq, &intelli_plug_work,
-		msecs_to_jiffies(sampling_time));
+		queue_delayed_work_on(0, intelliplug_wq, &intelli_plug_work,
+			msecs_to_jiffies(sampling_time));
+	}
 }
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
@@ -471,9 +473,8 @@ static void intelli_plug_early_suspend(struct early_suspend *handler)
 	int i = 0;
 	int num_of_active_cores = num_possible_cpus();
 
-	flush_workqueue(intelliplug_wq);
-
 	if (atomic_read(&intelli_plug_active) == 1) {
+		flush_workqueue(intelliplug_wq);
 		mutex_lock(&intelli_plug_mutex);
 		hotplug_suspended = true;
 		mutex_unlock(&intelli_plug_mutex);
@@ -508,10 +509,9 @@ static void intelli_plug_late_resume(struct early_suspend *handler)
 		for (i = 1; i < num_of_active_cores; i++) {
 			cpu_up(i);
 		}
-		sampling_time_on = 10;
+		queue_delayed_work_on(0, intelliplug_wq, &intelli_plug_work,
+			msecs_to_jiffies(sampling_time_on));
 	}
-	queue_delayed_work_on(0, intelliplug_wq, &intelli_plug_work,
-		msecs_to_jiffies(sampling_time_on));
 }
 
 static struct early_suspend intelli_plug_early_suspend_struct_driver = {
@@ -537,9 +537,15 @@ static int __init intelli_plug_init(void)
 
 	intelliplug_wq = alloc_workqueue("intelliplug",
 				WQ_HIGHPRI | WQ_UNBOUND, 1);
+	if (!intelliplug_wq) {
+		printk(KERN_ERR "Failed to create intelliplug_wq \
+				workqueue\n");
+		return -EFAULT;
+	}
 	INIT_DELAYED_WORK(&intelli_plug_work, intelli_plug_work_fn);
-	queue_delayed_work_on(0, intelliplug_wq, &intelli_plug_work,
-		msecs_to_jiffies(10));
+	if (atomic_read(&intelli_plug_active) == 1)
+		queue_delayed_work_on(0, intelliplug_wq, &intelli_plug_work,
+			msecs_to_jiffies(10));
 
 	return 0;
 }
@@ -552,8 +558,7 @@ static int __exit intelli_plug_exit(void)
 	unregister_early_suspend(&intelli_plug_early_suspend_struct_driver);
 #endif
 
-	sysfs_remove_group(kernel_kobj,
-					   &intelli_plug_attr_group);
+	sysfs_remove_group(kernel_kobj, &intelli_plug_attr_group);
 
 	return 0;
 }
