@@ -929,7 +929,7 @@ static inline void mdp_vid_quant_set(void)
 }
 #endif
 
-#ifdef CONFIG_UPDATE_LCDC_LUT
+#ifdef CONFIG_LGE_QC_LCDC_LUT
 #define R_MASK    0x00ff0000
 #define G_MASK    0x000000ff
 #define B_MASK    0x0000ff00
