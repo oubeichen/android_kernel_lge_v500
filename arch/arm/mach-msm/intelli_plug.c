@@ -116,7 +116,7 @@ show_one(nr_run_hysteresis, nr_run_hysteresis);
 #define store_one(file_name, object)		\
 static ssize_t store_##file_name		\
 (struct kobject *kobj, struct attribute *attr,	\
-	char *buf, size_t count)		\
+	const char *buf, size_t count)		\
 {						\
 	unsigned int input;			\
 	int ret;				\
