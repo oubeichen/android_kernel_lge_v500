@@ -36,15 +36,6 @@
 
 #include <linux/input/lge_touch_core.h>
 
-#ifdef CONFIG_TOUCHSCREEN_PREVENT_SLEEP
-#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
-#include <linux/input/sweep2wake.h>
-#endif
-#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
-#include <linux/input/doubletap2wake.h>
-#endif
-#endif
-
 #ifdef CUST_G_TOUCH
 #include "./DS4/RefCode.h"
 #include "./DS4/RefCode_PDTScan.h"
@@ -605,8 +596,6 @@ void* get_touch_handle(struct i2c_client *client)
  */
 int touch_i2c_read(struct i2c_client *client, u8 reg, int len, u8 *buf)
 {
-#define LGETOUCH_I2C_RETRY 10
-	int retry = 0;
 	struct i2c_msg msgs[] = {
 		{
 			.addr = client->addr,
@@ -622,18 +611,12 @@ int touch_i2c_read(struct i2c_client *client, u8 reg, int len, u8 *buf)
 		},
 	};
 
-	for (retry = 0; retry <= LGETOUCH_I2C_RETRY; retry++) {
-		if (i2c_transfer(client->adapter, msgs, 2) == 2)
-			break;
-		if (retry == LGETOUCH_I2C_RETRY) {
-			if (printk_ratelimit())
-				TOUCH_ERR_MSG("transfer error\n");
-			return -EIO;
-		} else
-			msleep(10);
-	}
-
-	return 0;
+	if (i2c_transfer(client->adapter, msgs, 2) < 0) {
+		if (printk_ratelimit())
+			TOUCH_ERR_MSG("transfer error\n");
+		return -EIO;
+	} else
+		return 0;
 }
 
 int touch_i2c_write(struct i2c_client *client, u8 reg, int len, u8 * buf)
@@ -4001,12 +3984,7 @@ static int touch_probe(struct i2c_client *client, const struct i2c_device_id *id
 
 		ret = request_threaded_irq(client->irq, touch_irq_handler,
 				touch_thread_irq_handler,
-#ifdef CONFIG_TOUCHSCREEN_PREVENT_SLEEP
-				ts->pdata->role->irqflags | IRQF_ONESHOT | IRQF_TRIGGER_LOW | IRQF_NO_SUSPEND,
-#else
-				ts->pdata->role->irqflags | IRQF_ONESHOT,
-#endif
-				client->name, ts);
+				ts->pdata->role->irqflags | IRQF_ONESHOT, client->name, ts);
 
 		if (ret < 0) {
 			TOUCH_ERR_MSG("request_irq failed. use polling mode\n");
@@ -4172,17 +4150,6 @@ static void touch_early_suspend(struct early_suspend *h)
 {
 	struct lge_touch_data *ts =
 			container_of(h, struct lge_touch_data, early_suspend);
-#ifdef CONFIG_TOUCHSCREEN_PREVENT_SLEEP
-#if defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE) || defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE)
-	bool prevent_sleep = false;
-#endif
-#if defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE)
-	prevent_sleep = (s2w_switch > 0) && (s2w_s2sonly == 0);
-#endif
-#if defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE)
-	prevent_sleep = prevent_sleep || (dt2w_switch > 0);
-#endif
-#endif
 
 	if (unlikely(touch_debug_mask & DEBUG_TRACE))
 		TOUCH_DEBUG_MSG("\n");
@@ -4198,13 +4165,6 @@ static void touch_early_suspend(struct early_suspend *h)
 	}
 #endif
 
-#ifdef CONFIG_TOUCHSCREEN_PREVENT_SLEEP
-	if (prevent_sleep) {
-		enable_irq_wake(ts->client->irq);
-		release_all_ts_event(ts);
-	} else
-#endif
-        {
 	if (ts->pdata->role->operation_mode)
 		disable_irq(ts->client->irq);
 	else
@@ -4223,24 +4183,12 @@ static void touch_early_suspend(struct early_suspend *h)
 	release_all_ts_event(ts);
 
 	touch_power_cntl(ts, ts->pdata->role->suspend_pwr);
-        }
 }
 
 static void touch_late_resume(struct early_suspend *h)
 {
 	struct lge_touch_data *ts =
 			container_of(h, struct lge_touch_data, early_suspend);
-#ifdef CONFIG_TOUCHSCREEN_PREVENT_SLEEP
-#if defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE) || defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE)
-	bool prevent_sleep = false;
-#endif
-#if defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE)
-	prevent_sleep = (s2w_switch > 0) && (s2w_s2sonly == 0);
-#endif
-#if defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE)
-	prevent_sleep = prevent_sleep || (dt2w_switch > 0);
-#endif
-#endif
 
 	if (unlikely(touch_debug_mask & DEBUG_TRACE))
 		TOUCH_DEBUG_MSG("\n");
@@ -4250,12 +4198,6 @@ static void touch_late_resume(struct early_suspend *h)
 		return;
 	}
 
-#ifdef CONFIG_TOUCHSCREEN_PREVENT_SLEEP
-	if (prevent_sleep)
-		disable_irq_wake(ts->client->irq);
-	else
-#endif
-        {
 	touch_power_cntl(ts, ts->pdata->role->resume_pwr);
 #ifdef CUST_G_TOUCH
 	if (ts->pdata->role->ghost_detection_enable) {
@@ -4274,23 +4216,6 @@ static void touch_late_resume(struct early_suspend *h)
 				msecs_to_jiffies(ts->pdata->role->booting_delay));
 	else
 		queue_delayed_work(touch_wq, &ts->work_init, 0);
-        }
-	{
-		touch_power_cntl(ts, ts->pdata->role->resume_pwr);
-
-		if (ts->pdata->role->operation_mode == INTERRUPT_MODE)
-			enable_irq(ts->client->irq);
-		else
-			hrtimer_start(&ts->timer,
-				ktime_set(0, ts->pdata->role->report_period),
-						HRTIMER_MODE_REL);
-
-		if (ts->pdata->role->resume_pwr == POWER_ON)
-			queue_delayed_work(touch_wq, &ts->work_init,
-				msecs_to_jiffies(ts->pdata->role->booting_delay));
-		else
-			queue_delayed_work(touch_wq, &ts->work_init, 0);
-	}
 }
 #endif
 
