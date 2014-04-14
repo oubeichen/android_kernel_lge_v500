@@ -51,8 +51,8 @@
 #define DEF_HIGH_GRID_STEP             		(20)
 #define DEF_MIDDLE_GRID_LOAD			(65)
 #define DEF_HIGH_GRID_LOAD			(89)
-#define DEF_OPTIMAL_FREQ			(1574400)
-#define DEF_OLPM_FREQ				(1574400)
+#define DEF_OPTIMAL_FREQ			(1566000)
+#define DEF_OLPM_FREQ				(1566000)
 #endif /* defined(CONFIG_LG_GRID_GOVERNOR) */
 
 /*
