@@ -316,7 +316,6 @@ struct diagchar_dev {
 #ifdef CONFIG_DIAGFWD_BRIDGE_CODE
 	spinlock_t hsic_ready_spinlock;
 	/* common for all bridges */
-	struct work_struct diag_connect_work;
 	struct work_struct diag_disconnect_work;
 	/* SGLTE variables */
 	int lcid;

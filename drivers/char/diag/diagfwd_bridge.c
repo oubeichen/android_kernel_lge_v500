@@ -283,8 +283,7 @@ static void diagfwd_bridge_notifier(void *priv, unsigned event,
 
 	switch (event) {
 	case USB_DIAG_CONNECT:
-		queue_work(driver->diag_wq,
-			 &driver->diag_connect_work);
+		diagfwd_connect_bridge(1);
 		break;
 	case USB_DIAG_DISCONNECT:
 		queue_work(driver->diag_wq,
