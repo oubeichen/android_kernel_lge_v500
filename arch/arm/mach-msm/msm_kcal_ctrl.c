@@ -1081,7 +1081,7 @@ static struct early_suspend msm_kcal_early_suspend_struct_driver = {
         .resume = msm_kcal_late_resume,
 };
 
-int __init kcal_ctrl_init(void)
+int __init msm_kcal_ctrl_init(void)
 {
 #if 0
 	struct kcal_platform_data *kcalPtr;
@@ -1110,7 +1110,7 @@ int __init kcal_ctrl_init(void)
 	return platform_driver_register(&this_driver);
 }
 
-device_initcall(kcal_ctrl_init);
+device_initcall(msm_kcal_ctrl_init);
 
 //MODULE_DESCRIPTION("Generic MSM KCAL driver");
 MODULE_LICENSE("GPL and additional rights");
