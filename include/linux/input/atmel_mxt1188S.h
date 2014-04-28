@@ -28,7 +28,11 @@
 #define MXT_MAX_NUM_TOUCHES		10
 
 #ifdef USE_FW_11AA
+#ifdef CONFIG_TOUCHSCREEN_ATMEL_KNOCK_ON
+#define MXT_LATEST_FW_VERSION       0x10
+#else
 #define MXT_LATEST_FW_VERSION       0x11
+#endif
 #ifdef CONFIG_TOUCHSCREEN_LGE_LPWG
 #define MXT_LATEST_FW_BUILD         0xFD
 #else

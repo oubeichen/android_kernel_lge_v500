@@ -2234,8 +2234,12 @@ static void mxt_proc_t24_messages(struct mxt_data *data, u8 *message)
 		if (data->lpwg_mode == LPWG_DOUBLE_TAP) {
 #endif
 			wake_lock_timeout(&touch_wake_lock, msecs_to_jiffies(2000));
-			dev_err(&data->client->dev,"Knock On detected x[%3d] y[%3d] \n", x, y);
-			kobject_uevent_env(&lge_touch_sys_device.kobj, KOBJ_CHANGE, knockon_event);
+			dev_info(&data->client->dev,"Knock On detected x[%3d] y[%3d] \n", x, y);
+			input_report_key(data->input_dev, KEY_POWER, true);
+			input_sync(data->input_dev);
+			msleep(MXT_WAKEUP_TIME);
+			input_report_key(data->input_dev, KEY_POWER, false);
+			input_sync(data->input_dev);
 #ifdef CONFIG_TOUCHSCREEN_LGE_LPWG
 		}
 #endif
