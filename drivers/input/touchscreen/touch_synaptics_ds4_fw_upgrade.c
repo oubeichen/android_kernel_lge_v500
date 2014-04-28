@@ -153,10 +153,15 @@ int FirmwareUpgrade(struct synaptics_ts_data *ts, const char* fw_path){
 	TOUCH_INFO_MSG("fw_image_confid_id = %s, fw_image_product_id=%s\n", fw_image_config_id, fw_image_product_id);
 
 	switch( ts->ic_panel_type ) {
-		case L05E_IC7020_G2: 		// L05E
-		case CMCC_IC7020_GFF_SUNTEL:	// CMCC 
-		case CMCC_IC7020_GFF_LGIT:	// CMCC 
-		case GJ_IC7020_GFF_H_PTN: 	// GJ
+		case G_IC7020_G2_LGIT:		/*   */
+		case G_IC7020_G2_TPK:		/*   */
+		case GJ_IC7020_GFF_H_PTN: 	/*    */
+		case GV_IC7020_G2_H_PTN_LGIT: 	/*    */
+		case GV_IC7020_G2_H_PTN_TPK :   /*    */
+		case GK_IC7020_G1F: 		/*    */
+		case GK_IC7020_GFF_SUNTEL:	/*    */
+		case GK_IC7020_GFF_LGIT:	/*    */
+		case GK_IC7020_GFF_LGIT_HYBRID:	/*    */
 			if(!strcmp(ts->fw_info.product_id, fw_image_product_id)) {
 				TOUCH_INFO_MSG("TOUCH FIRMWARE UPGRADE ts->ic_panel_type=%d\n", ts->ic_panel_type);
 			} else {
@@ -221,7 +226,7 @@ void SynaSetup(struct synaptics_ts_data *ts)
 {
 
     unsigned char address;
-    unsigned char buffer[6] = {0,};
+    unsigned char buffer[6];
 	TOUCH_INFO_MSG("%s", __FUNCTION__);
 
 	for (address = 0xe9; address > 0xd0; address = address - 6)
@@ -288,7 +293,7 @@ void SynaSetup(struct synaptics_ts_data *ts)
  */
 void SynaInitialize(struct synaptics_ts_data *ts)
 {	
-	unsigned char uData[2] = {0,};
+	unsigned char uData[2];
 	//unsigned char uStatus;
 	TOUCH_INFO_MSG("%s", __FUNCTION__);
 
@@ -338,7 +343,7 @@ void SynaReadFirmwareInfo(struct synaptics_ts_data *ts)
  */
 void SynaReadConfigInfo(struct synaptics_ts_data *ts)
 {
-	unsigned char uData[2] = {0,};
+	unsigned char uData[2];
 	TOUCH_INFO_MSG("%s", __FUNCTION__);
 
 	TOUCH_INFO_MSG("\nRead Config Info");
@@ -356,7 +361,7 @@ void SynaReadConfigInfo(struct synaptics_ts_data *ts)
  */
 void SynaReadBootloadID(struct synaptics_ts_data *ts)
 {
-	unsigned char uData[2]= {0,};
+	unsigned char uData[2];
 	TOUCH_INFO_MSG("%s", __FUNCTION__);
 
 	readRMI(ts->client, SynaF34ReflashQuery_BootID, &uData[0], 2);
@@ -404,7 +409,7 @@ int SynaWaitForATTN(int time, struct synaptics_ts_data *ts)
 int SynaWaitATTN(struct synaptics_ts_data *ts)
 {
 	int ret;
-	unsigned char uData = 0;
+	unsigned char uData;
 	unsigned char uStatus;
 //	unsigned char temp;
 
@@ -431,8 +436,8 @@ int SynaWaitATTN(struct synaptics_ts_data *ts)
 int SynaEnableFlashing(struct synaptics_ts_data *ts)
 {
 	int ret;
-	unsigned char uData = 0;
-	unsigned char uStatus = 0;
+	unsigned char uData;
+	unsigned char uStatus;
 	TOUCH_INFO_MSG("%s", __FUNCTION__);
 
 	TOUCH_INFO_MSG("\nEnable Reflash...");
@@ -515,7 +520,7 @@ int SynaFinalizeReflash(struct synaptics_ts_data *ts)
 {
 	int ret;
 	unsigned char uData;
-	unsigned char uStatus = 0;
+	unsigned char uStatus;
 	TOUCH_INFO_MSG("%s", __FUNCTION__);
 
 	TOUCH_INFO_MSG("\nFinalizing Reflash...");
@@ -685,7 +690,7 @@ int SynaBootloaderLock(struct synaptics_ts_data *ts)
 	int ret;
 	unsigned short lockBlockCount;
     unsigned char *puFirmwareData = SynalockImgData;
-    unsigned char uData[2]= {0,};
+    unsigned char uData[2];
     unsigned short uBlockNum;
 
 	// Check if device is in unlocked state
@@ -763,7 +768,7 @@ int SynaBootloaderLock(struct synaptics_ts_data *ts)
 int ConfigBlockReflash(struct synaptics_ts_data *ts)
 {
 	int ret;
-	unsigned char uData[2]= {0,};
+	unsigned char uData[2];
 	TOUCH_INFO_MSG("%s", __FUNCTION__);
 
   

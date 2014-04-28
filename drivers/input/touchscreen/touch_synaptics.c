@@ -21,14 +21,17 @@
 #include <linux/i2c.h>
 #include <linux/slab.h>
 #include <linux/gpio.h>
+#include <linux/async.h>
 
 #include <linux/input/lge_touch_core.h>
 #include <linux/input/touch_synaptics.h>
 
-#if defined(CONFIG_MACH_APQ8064_L05E)
-#include "SynaImage_L05E.h"
-#elif defined(CONFIG_MACH_APQ8064_GVAR_CMCC)
-#include "SynaImage_CMCC.h"
+#if defined(CONFIG_MACH_APQ8064_GK_KR) || defined(CONFIG_MACH_APQ8064_GKATT) || defined(CONFIG_MACH_APQ8064_GKGLOBAL)
+#include "SynaImage_for_GK.h"
+#elif defined(CONFIG_MACH_APQ8064_GVDCM)
+#include "SynaImage_for_DCM.h"
+#elif defined(CONFIG_MACH_APQ8064_J1D) || defined(CONFIG_MACH_APQ8064_J1KD)
+#include "SynaImage_for_GJ.h"
 #else
 #include "SynaImage.h"
 #define G_ONLY
@@ -189,12 +192,16 @@
 		(_finger_status_reg[0] & 0x04)>>1 | (_finger_status_reg[0] & 0x01)
 
 #define GET_INDEX_FROM_MASK(_index, _bit_mask, _max_finger)	\
-		for(; !((_bit_mask>>_index)&0x01) && _index < _max_finger; _index++);	\
+		for(; !((_bit_mask>>_index)&0x01) && _index <= _max_finger; _index++);	\
 		if (_index <= _max_finger) _bit_mask &= ~(_bit_mask & (1<<(_index)));
 
 #ifdef CUST_G_TOUCH
 u8 pressure_zero = 0;
 extern int ts_charger_plug;
+extern int ts_charger_type;
+extern int cur_hopping_idx;
+int cns_en = 0;
+u8 hopping = 0;
 #endif
 
 /* wrapper function for i2c communication - except defalut page
@@ -275,6 +282,12 @@ int synaptics_ts_get_data(struct i2c_client *client, struct touch_data* data)
 	u16 im = 0;
 	u16 vm = 0;
 	u16 aim = 0;
+#if defined(CONFIG_MACH_APQ8064_GK_KR) || defined(CONFIG_MACH_APQ8064_GKATT) || defined(CONFIG_MACH_APQ8064_GKGLOBAL)
+	int z_30_cnt = 0; /*                                        */
+#endif
+#ifdef G_ONLY
+	hopping = 0;
+#endif
 	data->total_num = 0;
 #ifdef CUST_G_TOUCH
 	pressure_zero = 0;
@@ -362,23 +375,12 @@ int synaptics_ts_get_data(struct i2c_client *client, struct touch_data* data)
 			}
 
 			data->curr_data[finger_index].id = finger_index;
-//2013-04-26 goensoo.kim@lge.com	[TEMP PATCH] Adjust touch axis for awifi EVB [START]			
-#ifdef CONFIG_MACH_APQ8064_AWIFI
-						data->curr_data[finger_index].x_position =
-							TS_SNTS_GET_X_POSITION(ts->ts_data.finger.finger_reg[finger_index][REG_Y_POSITION],
-												   ts->ts_data.finger.finger_reg[finger_index][REG_YX_POSITION]);
-						data->curr_data[finger_index].y_position =
-							2160 - TS_SNTS_GET_Y_POSITION(ts->ts_data.finger.finger_reg[finger_index][REG_X_POSITION],
-												   ts->ts_data.finger.finger_reg[finger_index][REG_YX_POSITION]);
-#else			
-						data->curr_data[finger_index].x_position =
-							TS_SNTS_GET_X_POSITION(ts->ts_data.finger.finger_reg[finger_index][REG_X_POSITION],
-												   ts->ts_data.finger.finger_reg[finger_index][REG_YX_POSITION]);
-						data->curr_data[finger_index].y_position =
-							TS_SNTS_GET_Y_POSITION(ts->ts_data.finger.finger_reg[finger_index][REG_Y_POSITION],
-												   ts->ts_data.finger.finger_reg[finger_index][REG_YX_POSITION]);
-#endif
-//2013-04-26 goensoo.kim@lge.com	[TEMP PATCH] Adjust touch axis for awifi EVB [END]
+			data->curr_data[finger_index].x_position =
+				TS_SNTS_GET_X_POSITION(ts->ts_data.finger.finger_reg[finger_index][REG_X_POSITION],
+									   ts->ts_data.finger.finger_reg[finger_index][REG_YX_POSITION]);
+			data->curr_data[finger_index].y_position =
+				TS_SNTS_GET_Y_POSITION(ts->ts_data.finger.finger_reg[finger_index][REG_Y_POSITION],
+									   ts->ts_data.finger.finger_reg[finger_index][REG_YX_POSITION]);
 			data->curr_data[finger_index].width_major = TS_SNTS_GET_WIDTH_MAJOR(ts->ts_data.finger.finger_reg[finger_index][REG_WY_WX]);
 			data->curr_data[finger_index].width_minor = TS_SNTS_GET_WIDTH_MINOR(ts->ts_data.finger.finger_reg[finger_index][REG_WY_WX]);
 			data->curr_data[finger_index].width_orientation = TS_SNTS_GET_ORIENTATION(ts->ts_data.finger.finger_reg[finger_index][REG_WY_WX]);
@@ -389,9 +391,10 @@ int synaptics_ts_get_data(struct i2c_client *client, struct touch_data* data)
 				if(data->curr_data[finger_index].pressure == 0) pressure_zero = 1;
 			}
 #endif
-
-#if defined(CONFIG_LGE_TOUCH_MOUSE)
-			msleep(2);
+#if defined(CONFIG_MACH_APQ8064_GK_KR) || defined(CONFIG_MACH_APQ8064_GKATT) || defined(CONFIG_MACH_APQ8064_GKGLOBAL)
+			if(data->curr_data[finger_index].pressure == 30) {
+				z_30_cnt++; /*                                        */
+			}
 #endif
 			if (unlikely(touch_debug_mask & DEBUG_GET_DATA))
 				TOUCH_INFO_MSG("<%d> pos(%4d,%4d) w_m[%2d] w_n[%2d] w_o[%2d] p[%2d]\n",
@@ -402,6 +405,9 @@ int synaptics_ts_get_data(struct i2c_client *client, struct touch_data* data)
 			index++;
 		}
 		data->total_num = index;
+#if defined(CONFIG_MACH_APQ8064_GK_KR) || defined(CONFIG_MACH_APQ8064_GKATT) || defined(CONFIG_MACH_APQ8064_GKGLOBAL)
+		z_30_num = z_30_cnt; /*                                        */
+#endif
 		if (unlikely(touch_debug_mask & DEBUG_GET_DATA))
 			TOUCH_INFO_MSG("Total_num: %d\n", data->total_num);
 	}
@@ -423,11 +429,20 @@ int synaptics_ts_get_data(struct i2c_client *client, struct touch_data* data)
 				for (cnt = 0; cnt < ts->pdata->caps->number_of_button; cnt++)
 				{
 #ifdef CUST_G_TOUCH
-					if ((ts->ts_data.button_data_reg >> cnt) & 0x1) {
-						ts->ts_data.button.key_code = ts->pdata->caps->button_name[cnt];
-						data->curr_button.key_code = ts->ts_data.button.key_code;
-						data->curr_button.state = 1;
-						break;
+					if(ts->ic_panel_type == G_IC3203_G2) {
+						if ((ts->ts_data.button_data_reg >> (cnt << 1)) & 0x3) {
+							ts->ts_data.button.key_code = ts->pdata->caps->button_name[cnt];
+							data->curr_button.key_code = ts->ts_data.button.key_code;
+							data->curr_button.state = 1;
+							break;
+						}
+					} else {
+						if ((ts->ts_data.button_data_reg >> cnt) & 0x1) {
+							ts->ts_data.button.key_code = ts->pdata->caps->button_name[cnt];
+							data->curr_button.key_code = ts->ts_data.button.key_code;
+							data->curr_button.state = 1;
+							break;
+						}
 					}
 #endif
 				}
@@ -461,6 +476,21 @@ int synaptics_ts_get_data(struct i2c_client *client, struct touch_data* data)
 		if (unlikely(synaptics_ts_page_data_read(client, ANALOG_PAGE, 0x0D, 1, &cns) < 0)) {
 			TOUCH_ERR_MSG("Current Noise State REG read fail\n");
 			goto err_synaptics_getdata;
+		}
+
+		if(ts_charger_plug && cns >= 1) {
+			cns_en = 1;
+#ifdef G_ONLY
+			if(cur_hopping_idx != 4){
+				buf = 0x84;
+				synaptics_ts_page_data_write(client, 0x01, 0x04, 1, &buf);
+				cur_hopping_idx = 4;
+				hopping = 1;
+				TOUCH_INFO_MSG("cur_hopping_idx [ %s ] = %x %x \n", __func__, buf, hopping);
+			} else {
+				hopping = 0;
+			}
+#endif
 		}
 
 		if (unlikely(synaptics_ts_page_data_read(client, ANALOG_PAGE, 0x05, 1, &buf) < 0)) {
@@ -576,7 +606,7 @@ static int read_page_description_table(struct i2c_client* client)
 	ts->interrupt_mask.status = 0x2;
 #ifdef CUST_G_TOUCH
 	ts->interrupt_mask.abs = 0x4;
-	ts->interrupt_mask.button = 0x10;
+	ts->interrupt_mask.button = 0x20;
 #endif
 
 	if(ts->common_fc.dsc.id == 0 || ts->finger_fc.dsc.id == 0
@@ -640,25 +670,72 @@ int get_ic_info(struct synaptics_ts_data* ts, struct touch_fw_info* fw_info)
 			"%s", ts->fw_info.config_id);
 	
 #ifdef CUST_G_TOUCH
-	if(!strncmp(ts->fw_info.product_id, "PLG211", 6)) {	//L05E
-		ts->ic_panel_type = L05E_IC7020_G2;
-		TOUCH_INFO_MSG("panel type : L05E_IC7020_G2");
-	} else if(!strncmp(ts->fw_info.product_id, "PLG192", 6)) {	//CMCC PANEL SUNTEL GFF
-		ts->ic_panel_type = CMCC_IC7020_GFF_SUNTEL;
-		TOUCH_INFO_MSG("IC is 7020, H pattern, panel is GFF. SUNTEL");
-		ts->interrupt_mask.button = 0x10;
-	} else if(!strncmp(ts->fw_info.product_id, "PLG193", 6)) {	//CMCC PANEL LGIT GFF
-		ts->ic_panel_type = CMCC_IC7020_GFF_LGIT;
-		TOUCH_INFO_MSG("IC is 7020, H pattern, panel is GFF. LGIT");
+	if(!strncmp(ts->fw_info.product_id, "DS4 R3.0", 8)) {	//           
+		if(!strncmp(fw_info->ic_fw_version, "0000", 4) || !strncmp(fw_info->ic_fw_version, "S001", 4)) {
+			ts->ic_panel_type = G_IC7020_GFF;
+			TOUCH_INFO_MSG("IC is 7020, panel is GFF.");
+		} else {
+			if( fw_info->ic_fw_version[0] == 'E' && (int)simple_strtol(&fw_info->ic_fw_version[1], NULL, 10) < 14) {
+				ts->ic_panel_type = G_IC7020_G2;
+				TOUCH_INFO_MSG("IC is 7020, panel is G2.");
+			} else if( (fw_info->ic_fw_version[0] == 'E' && 
+				  	   (int)simple_strtol(&fw_info->ic_fw_version[1], NULL, 10) >= 14 && 
+				       (int)simple_strtol(&fw_info->ic_fw_version[1], NULL, 10) < 27) || 
+				       fw_info->ic_fw_version[0] == 'T') {
+				ts->ic_panel_type = G_IC3203_G2;
+				TOUCH_INFO_MSG("IC is 3203, panel is G2.");
+			} else {
+				ts->ic_panel_type = UNKNOWN;
+				TOUCH_INFO_MSG("UNKNOWN OLD PANEL");
+			}
+		}
+	} else if(!strncmp(ts->fw_info.product_id, "TM2000", 6)) {	//            
+		ts->ic_panel_type = G_IC7020_G2_LGIT;
+		TOUCH_INFO_MSG("IC is 7020, H pattern, panel is G2. LGIT");
+
+		if((fw_info->ic_fw_version[0] == 'E') && 
+		   ((int)simple_strtol(&fw_info->ic_fw_version[1], NULL, 10) >= 40)) {
+			ts->interrupt_mask.button = 0x10;
+		}
+	} else if(!strncmp(ts->fw_info.product_id, "TM2369", 6)) {	//           
+		ts->ic_panel_type = G_IC7020_G2_TPK;
+		TOUCH_INFO_MSG("IC is 7020, H pattern, panel is G2. TPK");
 		ts->interrupt_mask.button = 0x10;
 	} else if(!strncmp(ts->fw_info.product_id, "TM2372", 6)) {	//GJ PANEL
 		ts->ic_panel_type = GJ_IC7020_GFF_H_PTN;
-		TOUCH_INFO_MSG("panel type : GJ_IC7020_GFF_H_PTN");
+		TOUCH_INFO_MSG("IC is 7020, H pattern, panel is GFF.");
 
 		if((fw_info->ic_fw_version[0] == 'E') &&
-		   ((int)simple_strtol(&fw_info->ic_fw_version[1], NULL, 10) < 2)) {
-			ts->interrupt_mask.button = 0x20;
+		   ((int)simple_strtol(&fw_info->ic_fw_version[1], NULL, 10) >= 2)) {
+			ts->interrupt_mask.button = 0x10;
 		}
+	} else if(!strncmp(ts->fw_info.product_id, "PLG124", 6)) {	//                 
+		ts->ic_panel_type = GK_IC7020_G1F;
+		TOUCH_INFO_MSG("IC is 7020, H pattern, panel is G1F.");
+		ts->interrupt_mask.button = 0x10;
+	} else if(!strncmp(ts->fw_info.product_id, "PLG192", 6)) {	//                   
+		ts->ic_panel_type = GK_IC7020_GFF_SUNTEL;
+		TOUCH_INFO_MSG("IC is 7020, H pattern, panel is GFF. SUNTEL");
+		ts->interrupt_mask.button = 0x10;
+	} else if(!strncmp(ts->fw_info.product_id, "PLG193", 6)) {	//                 
+		ts->ic_panel_type = GK_IC7020_GFF_LGIT;
+		TOUCH_INFO_MSG("IC is 7020, H pattern, panel is GFF. LGIT");
+		ts->interrupt_mask.button = 0x10;
+	} else if(!strncmp(ts->fw_info.product_id, "PLG207", 6)) {	//                        
+		ts->ic_panel_type = GK_IC7020_GFF_LGIT_HYBRID;
+		TOUCH_INFO_MSG("IC is 7020, H pattern, panel is GFF. LGIT");
+		ts->interrupt_mask.button = 0x10;
+	} else if(!strncmp(ts->fw_info.product_id, "PLG121", 6)) {	//        
+		ts->ic_panel_type = GV_IC7020_G2_H_PTN_LGIT;
+		TOUCH_INFO_MSG("IC is 7020, H pattern, panel is G2. LGIT");
+		ts->interrupt_mask.button = 0x10;
+	} else if(!strncmp(ts->fw_info.product_id, "PLG184", 6)) {	//            
+		ts->ic_panel_type = GV_IC7020_G2_H_PTN_TPK;
+		TOUCH_INFO_MSG("IC is 7020, H pattern, panel is G2. TPK");
+		ts->interrupt_mask.button = 0x10;
+	} else if(!strncmp(ts->fw_info.product_id, "S7020", 5)) {	//                           
+		TOUCH_INFO_MSG("UNKNOWN PANEL, Product id is S7020.");
+		ts->interrupt_mask.button = 0x10;
 	} else {
 		TOUCH_INFO_MSG("UNKNOWN PANEL");
 	}
@@ -675,26 +752,51 @@ int get_ic_info(struct synaptics_ts_data* ts, struct touch_fw_info* fw_info)
 	ts->fw_info.fw_start = (unsigned char *)&SynaFirmware[cnt][0];
 	ts->fw_info.fw_size = sizeof(SynaFirmware[0]);
 #else
-#if defined(CONFIG_MACH_APQ8064_L05E)
-	switch(ts->ic_panel_type){
-		case L05E_IC7020_G2:
-			memcpy(&SynaFirmware[0], &SynaFirmware_PLG211[0], sizeof(SynaFirmware));
-			break;
-		default:
-			TOUCH_ERR_MSG("UNKNOWN PANEL(L05E). SynaImage set error");
-			break;
-	}
-#elif defined(CONFIG_MACH_APQ8064_GVAR_CMCC)
-	switch(ts->ic_panel_type){
+#ifdef G_ONLY
+			switch(ts->ic_panel_type){
+				case G_IC7020_GFF:
+				case G_IC7020_G2:
+				case G_IC3203_G2:
+				case G_IC7020_G2_LGIT:
+					memcpy(&SynaFirmware[0], &SynaFirmware_TM2000[0], sizeof(SynaFirmware));
+					break;
+				case G_IC7020_G2_TPK:
+					memcpy(&SynaFirmware[0], &SynaFirmware_TM2369[0], sizeof(SynaFirmware));
+					break;
+				default:
+					TOUCH_ERR_MSG("UNKNOWN PANEL. SynaImage set error");
+					break;
+			}
+#endif
 
-		case CMCC_IC7020_GFF_SUNTEL:
+#if defined(CONFIG_MACH_APQ8064_GK_KR) || defined(CONFIG_MACH_APQ8064_GKATT) || defined(CONFIG_MACH_APQ8064_GKGLOBAL)
+	switch(ts->ic_panel_type){
+		case GK_IC7020_G1F:
+			memcpy(&SynaFirmware[0], &SynaFirmware_PLG124[0], sizeof(SynaFirmware));
+			break;
+		case GK_IC7020_GFF_SUNTEL:
 			memcpy(&SynaFirmware[0], &SynaFirmware_PLG192[0], sizeof(SynaFirmware));
 			break;
-		case CMCC_IC7020_GFF_LGIT:
+		case GK_IC7020_GFF_LGIT:
 			memcpy(&SynaFirmware[0], &SynaFirmware_PLG193[0], sizeof(SynaFirmware));
 			break;
+		case GK_IC7020_GFF_LGIT_HYBRID:
+			memcpy(&SynaFirmware[0], &SynaFirmware_PLG207[0], sizeof(SynaFirmware));
+			break;
 		default:
-			TOUCH_ERR_MSG("UNKNOWN PANEL(CMCC). SynaImage set error");
+			TOUCH_ERR_MSG("UNKNOWN PANEL(GK). SynaImage set error");
+			break;
+	}
+#elif defined(CONFIG_MACH_APQ8064_GVDCM)
+	switch(ts->ic_panel_type){
+		case GV_IC7020_G2_H_PTN_LGIT:
+			memcpy(&SynaFirmware[0], &SynaFirmware_PLG121[0], sizeof(SynaFirmware));
+			break;
+		case GV_IC7020_G2_H_PTN_TPK:
+			memcpy(&SynaFirmware[0], &SynaFirmware_PLG184[0], sizeof(SynaFirmware));
+			break;
+		default:
+			TOUCH_ERR_MSG("UNKNOWN PANEL(GV). SynaImage set error");
 			break;
 		}
 #endif
@@ -736,7 +838,7 @@ int get_ic_info(struct synaptics_ts_data* ts, struct touch_fw_info* fw_info)
 		ts->fw_info.fw_rev = 0;
 		snprintf(ts->fw_info.config_id, sizeof(ts->fw_info.config_id), "ERR");
 #ifdef CUST_G_TOUCH
-		fw_info->fw_force_rework = true;
+		fw_info->fw_upgrade.fw_force_rework = true;
 #endif
 	}
 
@@ -770,6 +872,31 @@ int synaptics_ts_init(struct i2c_client* client, struct touch_fw_info* fw_info)
 			TOUCH_ERR_MSG("DEVICE_CONTROL_REG write fail\n");
 			return -EIO;
 		}
+#ifdef G_ONLY
+		if (unlikely(synaptics_ts_page_data_read(client, 0x01, 0x04, 1, &buf) < 0)) {
+			TOUCH_ERR_MSG("Current Hopping Index read fail\n");
+			return -EIO;
+		}
+
+		if(buf == 3) cur_hopping_idx = 3;
+		else cur_hopping_idx = 4;
+
+		TOUCH_INFO_MSG("cur_hopping_idx [ %s ] = %x\n", __func__, buf);
+
+		switch(ts_charger_type) {
+			case 0:
+			case 1:
+				if(cns_en && cur_hopping_idx != 4){
+					buf = 0x84;
+					synaptics_ts_page_data_write(client, 0x01, 0x04, 1, &buf);
+					cur_hopping_idx = 4;
+					TOUCH_INFO_MSG("cur_hopping_idx [ %s ] = %x\n", __func__, buf);
+				}
+				break;
+			default:
+				break;
+		}
+#endif
 	}
 
 	if (unlikely(touch_i2c_read(client, DEVICE_CONTROL_REG,	1, &buf) < 0)) {
@@ -844,7 +971,7 @@ int synaptics_ts_init(struct i2c_client* client, struct touch_fw_info* fw_info)
 	}
 	
 	if(buf & SMALL_OBJECT_DETECTION) {
-		TOUCH_INFO_MSG("Stylus Pen is Supported\n");
+		TOUCH_INFO_MSG("Stylus Pen is Enabled\n");
 		ts->pdata->role->pen_enable = 1;
 	}
 #endif
@@ -889,6 +1016,11 @@ int synaptics_ts_power(struct i2c_client* client, int power_ctrl)
 #endif
 		break;
 	case POWER_ON:
+#ifdef CUST_G_TOUCH
+		if (ts->pdata->reset_pin > 0) {
+			gpio_set_value(ts->pdata->reset_pin, 1);
+		}
+#endif
 		if (ts->pdata->pwr->use_regulator) {
 			regulator_enable(ts->regulator_vdd);
 			regulator_enable(ts->regulator_vio);
@@ -896,10 +1028,21 @@ int synaptics_ts_power(struct i2c_client* client, int power_ctrl)
 		else
 			ts->pdata->pwr->power(1);
 
+#ifdef CUST_G_TOUCH
 		if (ts->pdata->reset_pin > 0) {
+			gpio_set_value(ts->pdata->reset_pin, 0);
+			msleep(ts->pdata->role->reset_delay);
 			gpio_set_value(ts->pdata->reset_pin, 1);
 		}
-
+#else
+		/*                */
+		if (ts->pdata->reset_pin > 0) {
+			msleep(10);
+			gpio_set_value(ts->pdata->reset_pin, 0);
+			msleep(ts->pdata->role->reset_delay);
+			gpio_set_value(ts->pdata->reset_pin, 1);
+		}
+#endif
 		break;
 	case POWER_SLEEP:
 		if (unlikely(touch_i2c_write_byte(client, DEVICE_CONTROL_REG,
@@ -996,26 +1139,14 @@ int synaptics_ts_resolution(struct i2c_client* client) {
 			return -EIO;
 		}
 		TOUCH_INFO_MSG("SENSOR_MAX_X=%d", (int)(resolution[1] << 8 | resolution[0]));
-		//2013-04-26 goensoo.kim@lge.com	[TEMP PATCH] Adjust touch axis for awifi EVB [START]
-#ifndef CONFIG_MACH_APQ8064_AWIFI		
-				ts->pdata->caps->x_max = (int)(resolution[1] << 8 | resolution[0]);
-#else
-				ts->pdata->caps->y_max = (int)(resolution[1] << 8 | resolution[0]);
-#endif
-		//2013-04-26 goensoo.kim@lge.com	[TEMP PATCH] Adjust touch axis for awifi EVB [END]
+		ts->pdata->caps->x_max = (int)(resolution[1] << 8 | resolution[0]);
 
 		if (unlikely(touch_i2c_read(ts->client, SENSOR_MAX_Y_POS, sizeof(resolution), resolution) < 0)) {
 			TOUCH_ERR_MSG("SENSOR_MAX_Y read fail\n");
 			return -EIO;
 		}
 		TOUCH_INFO_MSG("SENSOR_MAX_Y=%d", (int)(resolution[1] << 8 | resolution[0]));
-		//2013-04-26 goensoo.kim@lge.com	[TEMP PATCH] Adjust touch axis for awifi EVB [START]
-#ifndef CONFIG_MACH_APQ8064_AWIFI		
-				ts->pdata->caps->y_max = (int)(resolution[1] << 8 | resolution[0]);
-#else
-				ts->pdata->caps->x_max = (int)(resolution[1] << 8 | resolution[0]); 	
-#endif
-		//2013-04-26 goensoo.kim@lge.com	[TEMP PATCH] Adjust touch axis for awifi EVB [END]
+		ts->pdata->caps->y_max = (int)(resolution[1] << 8 | resolution[0]);
 	}
 
 	return 0;
@@ -1237,12 +1368,21 @@ struct touch_device_driver synaptics_ts_driver = {
 	.ic_ctrl	= synaptics_ts_ic_ctrl,
 };
 
+static void async_touch_init(void *data, async_cookie_t cookie)
+{
+	if (touch_debug_mask & DEBUG_TRACE)
+		TOUCH_DEBUG_MSG("\n");
+
+	touch_driver_register(&synaptics_ts_driver);
+}
+
 static int __devinit touch_init(void)
 {
 	if (touch_debug_mask & DEBUG_TRACE)
 		TOUCH_DEBUG_MSG("\n");
 
-	return touch_driver_register(&synaptics_ts_driver);
+	async_schedule(async_touch_init, NULL);
+	return 0;
 }
 
 static void __exit touch_exit(void)

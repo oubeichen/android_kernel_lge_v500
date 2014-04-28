@@ -28,6 +28,12 @@
 #define CUST_G_TOUCH
 #endif
 
+#if defined(CONFIG_MACH_APQ8064_GK_KR) || defined(CONFIG_MACH_APQ8064_GKATT) || defined(CONFIG_MACH_APQ8064_GKGLOBAL)
+#define PRESSURE_DIFF	/*                          */
+#define MULTI_GHOST_DETECT
+#define HOME_KEY_DETECTION
+//                    
+#endif
 struct touch_device_caps
 {
 	u8		button_support;
@@ -129,6 +135,9 @@ struct fw_upgrade_info
 {
 	char		fw_path[256];
 	u8			fw_force_upgrade;
+#ifdef CUST_G_TOUCH
+	u8			fw_force_rework;
+#endif
 	volatile u8	is_downloading;
 };
 
@@ -138,7 +147,6 @@ struct touch_fw_info
 	u8		ic_fw_identifier[31];	/* String */
 	u8		ic_fw_version[11];		/* String */
 #ifdef CUST_G_TOUCH
-	u8			fw_force_rework;
 	u8		syna_img_fw_version[5];
 	u8		syna_img_fw_product_id[11];
 #endif
@@ -220,6 +228,17 @@ struct accuracy_filter_info {
 	struct accuracy_history_data	his_data;
 };
 
+#ifdef PRESSURE_DIFF
+struct pressure_diff_info {
+	bool ghost_diff_detection;
+	int z_diff_cnt;
+	int z30_id;
+	int z_more30_id;
+	int z30_x_pos_1st;
+	int z30_y_pos_1st;
+	bool z30_set_check;
+};
+#endif
 struct touch_device_driver {
 	int		(*probe)		(struct i2c_client *client);
 #ifdef CUST_G_TOUCH
@@ -359,6 +378,9 @@ enum{
 	DEBUG_JITTER			= (1U << 9),	// 512
 	DEBUG_ACCURACY			= (1U << 10),	// 1024
 	DEBUG_NOISE				= (1U << 11),	// 2048
+#ifdef PRESSURE_DIFF
+	DEBUG_PRESSURE			= (1U << 12),	//     
+#endif
 };
 
 #ifdef LGE_TOUCH_TIME_DEBUG
@@ -454,5 +476,7 @@ int touch_i2c_write_byte(struct i2c_client *client, u8 reg, u8 data);
 
 extern u32 touch_debug_mask;
 extern u32 touch_time_debug_mask;
-
+#if defined(CONFIG_MACH_APQ8064_GK_KR) || defined(CONFIG_MACH_APQ8064_GKATT) || defined(CONFIG_MACH_APQ8064_GKGLOBAL)
+extern int z_30_num; /*                                        */
+#endif
 #endif
