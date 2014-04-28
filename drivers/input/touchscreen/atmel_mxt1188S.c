@@ -5181,44 +5181,44 @@ static ssize_t mxt_chargerlogo_state_store(struct mxt_data *data,
 	}
 }
 
-static LGE_TOUCH_ATTR(fw_ver, S_IRUGO, mxt_fw_version_show, NULL);
-static LGE_TOUCH_ATTR(hw_version, S_IRUGO, mxt_hw_version_show, NULL);
-static LGE_TOUCH_ATTR(object, S_IRUGO, mxt_object_show, NULL);
-static LGE_TOUCH_ATTR(update_fw, S_IWUSR, NULL, mxt_update_fw_store);
-static LGE_TOUCH_ATTR(update_cfg, S_IWUSR, NULL, mxt_update_cfg_store);
-static LGE_TOUCH_ATTR(debug_enable, S_IWUSR | S_IRUSR, mxt_debug_enable_show,
+static DEVICE_ATTR(fw_ver, S_IRUGO, mxt_fw_version_show, NULL);
+static DEVICE_ATTR(hw_version, S_IRUGO, mxt_hw_version_show, NULL);
+static DEVICE_ATTR(object, S_IRUGO, mxt_object_show, NULL);
+static DEVICE_ATTR(update_fw, S_IWUSR, NULL, mxt_update_fw_store);
+static DEVICE_ATTR(update_cfg, S_IWUSR, NULL, mxt_update_cfg_store);
+static DEVICE_ATTR(debug_enable, S_IWUSR | S_IRUSR, mxt_debug_enable_show,
 		   mxt_debug_enable_store);
-static LGE_TOUCH_ATTR(change_cfg, S_IWUSR, NULL, mxt_change_cfg_store);
-static LGE_TOUCH_ATTR(object_num, S_IRUGO | S_IWUSR, mxt_object_num_show, mxt_object_num_store);
-static LGE_TOUCH_ATTR(quick_cover_status, S_IRUGO | S_IWUSR, mxt_smart_cover_show, mxt_smart_cover_store);
-static LGE_TOUCH_ATTR(self_test,S_IRUGO | S_IWUSR, mxt_show_self_test, NULL);
-static LGE_TOUCH_ATTR(chargerlogo,S_IRUGO | S_IWUSR, NULL, mxt_chargerlogo_state_store);
-static LGE_TOUCH_ATTR(knock_on_type, S_IRUGO, mxt_get_knockon_type, NULL);
+static DEVICE_ATTR(change_cfg, S_IWUSR, NULL, mxt_change_cfg_store);
+static DEVICE_ATTR(object_num, S_IRUGO | S_IWUSR, mxt_object_num_show, mxt_object_num_store);
+static DEVICE_ATTR(quick_cover_status, S_IRUGO | S_IWUSR, mxt_smart_cover_show, mxt_smart_cover_store);
+static DEVICE_ATTR(self_test,S_IRUGO | S_IWUSR, mxt_show_self_test, NULL);
+static DEVICE_ATTR(chargerlogo,S_IRUGO | S_IWUSR, NULL, mxt_chargerlogo_state_store);
+static DEVICE_ATTR(knock_on_type, S_IRUGO, mxt_get_knockon_type, NULL);
 #if defined(CONFIG_TOUCHSCREEN_LGE_LPWG)
-static LGE_TOUCH_ATTR(lpwg_data, S_IRUGO | S_IWUSR, show_lpwg_data, store_lpwg_data);
-static LGE_TOUCH_ATTR(lpwg_notify, S_IRUGO | S_IWUSR, NULL, store_lpwg_notify);
+static DEVICE_ATTR(lpwg_data, S_IRUGO | S_IWUSR, show_lpwg_data, store_lpwg_data);
+static DEVICE_ATTR(lpwg_notify, S_IRUGO | S_IWUSR, NULL, store_lpwg_notify);
 #else
-static LGE_TOUCH_ATTR(touch_gesture,S_IRUGO | S_IWUSR, NULL, mxt_knock_on_store);
+static DEVICE_ATTR(knock_on,S_IRUGO | S_IWUSR, NULL, mxt_knock_on_store);
 #endif
 
 static struct attribute *mxt_attrs[] = {
-	&lge_touch_attr_fw_ver.attr,
-	&lge_touch_attr_hw_version.attr,
-	&lge_touch_attr_object.attr,
-	&lge_touch_attr_update_fw.attr,
-	&lge_touch_attr_update_cfg.attr,
-	&lge_touch_attr_debug_enable.attr,
-	&lge_touch_attr_change_cfg.attr,
-	&lge_touch_attr_object_num.attr,
-	&lge_touch_attr_quick_cover_status.attr,
-	&lge_touch_attr_self_test.attr,
-	&lge_touch_attr_chargerlogo.attr,
-	&lge_touch_attr_knock_on_type.attr,
+	&dev_attr_fw_ver.attr,
+	&dev_attr_hw_version.attr,
+	&dev_attr_object.attr,
+	&dev_attr_update_fw.attr,
+	&dev_attr_update_cfg.attr,
+	&dev_attr_debug_enable.attr,
+	&dev_attr_change_cfg.attr,
+	&dev_attr_object_num.attr,
+	&dev_attr_quick_cover_status.attr,
+	&dev_attr_self_test.attr,
+	&dev_attr_chargerlogo.attr,
+	&dev_attr_knock_on_type.attr,
 #if defined(CONFIG_TOUCHSCREEN_LGE_LPWG)
-	&lge_touch_attr_lpwg_data.attr,
-	&lge_touch_attr_lpwg_notify.attr,
+	&dev_attr_lpwg_data.attr,
+	&dev_attr_lpwg_notify.attr,
 #else
-	&lge_touch_attr_touch_gesture.attr,
+	&dev_attr_knock_on.attr,
 #endif
 	NULL
 };
