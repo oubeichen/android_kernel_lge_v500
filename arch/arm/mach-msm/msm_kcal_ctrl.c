@@ -878,7 +878,7 @@ static ssize_t kgamma_reset_show(struct device *dev,
 
 static struct kcal_data kcal_value = {255, 255, 255};
 
-static int update_lcdc_lut(void)
+int update_preset_lcdc_lut(void)
 {
 	struct fb_cmap cmap;
 	int ret = 0;
@@ -898,7 +898,7 @@ static int update_lcdc_lut(void)
 
 	return ret;
 }
-
+EXPORT_SYMBOL(update_preset_lcdc_lut);
 static int kcal_set_values(int kcal_r, int kcal_g, int kcal_b)
 {
         kcal_value.red = kcal_r;
@@ -917,7 +917,7 @@ static int kcal_get_values(int *kcal_r, int *kcal_g, int *kcal_b)
 
 static int kcal_refresh_values(void)
 {
-        return update_lcdc_lut();
+        return update_preset_lcdc_lut();
 }
 
 static bool calc_checksum(unsigned int a, unsigned int b,
@@ -1093,10 +1093,10 @@ int __init kcal_ctrl_init(void)
 	kcalPtr->refresh_display = kcal_refresh_values;
 
 #endif
-	unsigned int addr;
+	//unsigned int addr;
 
-	addr =  kallsyms_lookup_name("update_preset_lcdc_lut");
-	*(funcPtr *)addr = (funcPtr)update_lcdc_lut;
+	//addr =  kallsyms_lookup_name("update_preset_lcdc_lut");
+	//*(funcPtr *)addr = (funcPtr)update_lcdc_lut;
 
 	platform_add_devices(msm_panel_devices,
 		ARRAY_SIZE(msm_panel_devices));
