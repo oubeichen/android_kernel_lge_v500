@@ -3269,7 +3269,7 @@ static irqreturn_t mxt_process_messages_t44(struct mxt_data *data)
 #if DEBUG_ABS
 		if (data->ts_data.curr_data[i].status == FINGER_PRESSED) {
 			tool_type = get_tool_type(data, data->ts_data.curr_data[i]);
-			dev_info(dev, "%s Pressed <%d> : x[%4d] y[%4d], z[%3d]\n",
+			dev_dbg(dev, "%s Pressed <%d> : x[%4d] y[%4d], z[%3d]\n",
 					tool_type,
 					data->ts_data.curr_data[i].id,
 					data->ts_data.curr_data[i].x_position,
@@ -3277,7 +3277,7 @@ static irqreturn_t mxt_process_messages_t44(struct mxt_data *data)
 					data->ts_data.curr_data[i].pressure);
 		} else if (data->ts_data.curr_data[i].status == FINGER_RELEASED) {
 			tool_type = get_tool_type(data, data->ts_data.prev_data[i]);
-			dev_info(dev, "%s Released <%d>\n",
+			dev_dbg(dev, "%s Released <%d>\n",
 					tool_type,
 					data->ts_data.curr_data[i].id);
 		}
