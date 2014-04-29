@@ -179,7 +179,7 @@ static void __ref tz_idle(struct kgsl_device *device, struct kgsl_pwrscale *pwrs
 
 		total = full_load / HISTORY_SIZE;
 
-		if (pwr->active_pwrlevel == 3 && total < 5000)
+		if (pwr->active_pwrlevel == 3 && total < 4000)
 		{
 			if (idle_counter < 10)
 				idle_counter += 1;
@@ -208,7 +208,7 @@ static void __ref tz_idle(struct kgsl_device *device, struct kgsl_pwrscale *pwrs
 		
 		window_time1 = jiffies;
 		
-		/*pr_info("---------------------------------");
+	/*	pr_info("---------------------------------");
 		if(gpu_idle){pr_info("GPU IDLE");}
 		else{pr_info("GPU BUSY");}
 		pr_info("Current Load:\t\t%d",total);
