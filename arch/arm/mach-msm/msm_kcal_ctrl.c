@@ -920,7 +920,7 @@ static int kcal_refresh_values(void)
         return update_preset_lcdc_lut();
 }
 
-static bool calc_checksum(unsigned int a, unsigned int b,
+/*static bool calc_checksum(unsigned int a, unsigned int b,
 			unsigned int c, unsigned int d)
 {
 	unsigned char chksum = 0;
@@ -932,7 +932,7 @@ static bool calc_checksum(unsigned int a, unsigned int b,
 	} else {
 		return false;
 	}
-}
+}*/
 
 static ssize_t kcal_store(struct device *dev, struct device_attribute *attr,
 						const char *buf, size_t count)
@@ -946,10 +946,10 @@ static ssize_t kcal_store(struct device *dev, struct device_attribute *attr,
 		return -EINVAL;
 
 	sscanf(buf, "%d %d %d %d", &kcal_r, &kcal_g, &kcal_b, &chksum);
-	chksum = (chksum & 0x0000ff00) >> 8;
+	//chksum = (chksum & 0x0000ff00) >> 8;
 
-	if (calc_checksum(kcal_r, kcal_g, kcal_b, chksum))
-		kcal_ctrl_pdata->set_values(kcal_r, kcal_g, kcal_b);
+	//if (calc_checksum(kcal_r, kcal_g, kcal_b, chksum))
+	kcal_ctrl_pdata->set_values(kcal_r, kcal_g, kcal_b);
 	return count;
 }
 
