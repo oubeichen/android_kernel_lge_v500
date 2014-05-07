@@ -386,7 +386,7 @@ static int kgsl_pwrctrl_max_gpuclk_store(struct device *dev,
 					 struct device_attribute *attr,
 					 const char *buf, size_t count)
 {
-	/*struct kgsl_device *device = kgsl_device_from_dev(dev);
+	struct kgsl_device *device = kgsl_device_from_dev(dev);
 	struct kgsl_pwrctrl *pwr;
 	unsigned int val = 0;
 	int ret, level;
@@ -406,17 +406,17 @@ static int kgsl_pwrctrl_max_gpuclk_store(struct device *dev,
 		goto done;
 
 	pwr->thermal_pwrlevel = level;
-
+	/*
 	 *
 	 * if the thermal limit is lower than the current setting,
 	 * move the speed down immediately
 	 *
-
+	 */
 	if (pwr->thermal_pwrlevel > pwr->active_pwrlevel)
 		kgsl_pwrctrl_pwrlevel_change(device, pwr->thermal_pwrlevel);
 
 done:
-	mutex_unlock(&device->mutex);*/
+	mutex_unlock(&device->mutex);
 	return count;
 }
 
