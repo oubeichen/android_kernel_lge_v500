@@ -223,11 +223,11 @@ static CountryInfoTable_t countryInfoTable =
         { REGDOMAIN_HI_5GHZ, {'I', 'R'}},  //IRAN, ISLAMIC REPUBLIC OF
         { REGDOMAIN_ETSI,    {'I', 'S'}},  //ICELAND
         { REGDOMAIN_ETSI,    {'I', 'T'}},  //ITALY
-        { REGDOMAIN_JAPAN,   {'J', '1'}},  //Japan alternate 1
-        { REGDOMAIN_JAPAN,   {'J', '2'}},  //Japan alternate 2
-        { REGDOMAIN_JAPAN,   {'J', '3'}},  //Japan alternate 3
-        { REGDOMAIN_JAPAN,   {'J', '4'}},  //Japan alternate 4
-        { REGDOMAIN_JAPAN,   {'J', '5'}},  //Japan alternate 5
+        { REGDOMAIN_WORLD,   {'J', '1'}},  //Japan alternate 1
+        { REGDOMAIN_WORLD,   {'J', '2'}},  //Japan alternate 2
+        { REGDOMAIN_WORLD,   {'J', '3'}},  //Japan alternate 3
+        { REGDOMAIN_WORLD,   {'J', '4'}},  //Japan alternate 4
+        { REGDOMAIN_WORLD,   {'J', '5'}},  //Japan alternate 5
         { REGDOMAIN_WORLD,   {'J', 'E'}},  //JERSEY
         { REGDOMAIN_WORLD,   {'J', 'M'}},  //JAMAICA
         { REGDOMAIN_APAC,    {'J', 'O'}},  //JORDAN
