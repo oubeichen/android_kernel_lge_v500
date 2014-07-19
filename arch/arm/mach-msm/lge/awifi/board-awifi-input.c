@@ -53,15 +53,25 @@
 */
 
 static u8 t7_config_s[] = { MXT_GEN_POWER_T7,
-	0x20, 0x09, 0x05, 0x43
+	0x20, 0x09, 0x05, 0x43,
+#ifdef USE_FW_11AA
+	0x00
+#endif
 };
 
 static u8 t8_config_s[] = { MXT_GEN_ACQUIRE_T8,
-	0x4E, 0x00, 0x03, 0x01, 0x00, 0x00, 0xFF, 0x01, 0x00, 0x00
+	0x4E, 0x00, 0x03, 0x01, 0x00, 0x00, 0xFF, 0x01, 0x00, 0x00,
+#ifdef USE_FW_11AA
+	0x00, 0x00, 0x00, 0x00, 0x00
+#endif
 };
 
 static u8 t9_config_s[] = { MXT_TOUCH_MULTI_T9,
+#ifdef USE_FW_11AA
+	0x8B, 0x00, 0x00, 0x1B, 0x2C, 0x00, 0x9B, 0x32, 0x02, 0x04,
+#else
 	0x83, 0x00, 0x00, 0x1B, 0x2C, 0x00, 0x9B, 0x32, 0x02, 0x04,
+#endif
 	0x05, 0x08, 0x07, 0x31, 0x0A, 0x0A, 0x1E, 0x0A, 0xFF, 0x0F,
 	0xFF, 0x0F, 0x10, 0x10, 0x00, 0x00, 0x8A, 0x10, 0x00, 0x00,
 	0x32, 0x0A, 0x2A, 0x2A, 0x00, 0x96, 0x05, 0xC1, 0x0F, 0x6E,
@@ -80,12 +90,12 @@ static u8 t18_config_s[] = { MXT_SPT_COMMSCONFIG_T18,
 static u8 t19_config_s[] = { MXT_SPT_GPIOPWM_T19,
 	0, 0, 0, 0, 0, 0
 };
-#ifdef CONFIG_TOUCHSCREEN_ATMEL_KNOCK_ON
+
 static u8 t24_config_s[] = { MXT_PROCI_ONETOUCH_T24,
-	0x00, 0x01, 0x08, 0, 0x08, 0x7F, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, /*0x96*/0xC8, 0x00, 0, 0
+	0x00, 0x01, 0x08, 0x00, 0x08, 0x7F, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, /*0x96*/0x90, 0x01, 0, 0
 };
-#endif
+
 static u8 t25_config_s[] = { MXT_SPT_SELFTEST_T25,
 	0x03, 0, 0x9C, 0x63, 0x14, 0x50, 0, 0, 0, 0,
 	0, 0, 0, 0, 0xC8, 0x88, 0x13, 0, 0, 0,
@@ -123,7 +133,7 @@ static u8 t38_config_s[] = { MXT_SPT_USERDATA_T38,
 };
 
 static u8 t40_config_s[] = { MXT_PROCI_GRIP_T40,
-	0x00, 0x05, 0x05, 0x05, 0x05
+	0x00, 0x1E, 0x1E, 0x28, 0x28
 };
 
 static u8 t42_config_s[] = { MXT_PROCI_TOUCHSUPPRESSION_T42,
@@ -165,7 +175,10 @@ static u8 t57_config_s[] = { MXT_PROCI_EXTRATOUCHSCREENDATA_T57,
 };
 
 static u8 t61_config_s[] = { MXT_SPT_TIMER_T61,
-	0x00, 0x00, 0x00, 0x00, 0x00
+	0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
 static u8 t62_config_s[] = { MXT_PROCG_NOISESUPPRESSION_T62,
@@ -210,7 +223,7 @@ static u8 t70_config_s[] = { MXT_SPT_DYNAMICCONFIGURATIONCONTROLLER_T70,
 };
 
 static u8 t71_config_s[] = { MXT_SPT_DYNAMICCONFIGURATIONCONTAINER_T71,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0x01, 0x01, 0x00, 0x2C, 0x01, 0x00, 0x0F, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -233,17 +246,24 @@ static u8 t73_config_s[] = { MXT_PROCI_ZONEINDICATION_T73,
 };
 
 static u8 t77_config_s[] = { MXT_SPT_CTESCANCONFIG_T77,
-	0X08, 0X04, 0X78, 0X28
+	0X09, 0X04, 0X78, 0X28
 };
 
 static u8 t79_config_s[] = { MXT_SPT_TOUCHEVENTTRIGGER_T79,
 	0X00, 0X00, 0X00
 };
-
+#ifdef USE_FW_11AA
 static u8 t82_config_s[] = { MXT_SPT_NOISESUPEXTENSION_T82,
 	0x00, 0x00, 0x00
 };
+#endif
 
+#ifdef CONFIG_TOUCHSCREEN_LGE_LPWG
+static u8 t93_config_s[] = { MXT_PROCI_TOUCH_SEQUENCE_LOGGER_T93,
+	0x01, 0x00, 0x00, 0xFF, 0x0F, 0x00, 0x00, 0xFF, 0x0F, 0xFA,
+	0x00, 0xFF, 0x0F, 0x00, 0x14, 0x00, 0x32, 0x02
+};
+#endif
 static u8 end_config_s[] = { MXT_RESERVED_T255 };
 
 static const u8 *mxt1188S_config[] = {
@@ -256,9 +276,7 @@ static const u8 *mxt1188S_config[] = {
 	t15_config_s,
 	t18_config_s,
 	t19_config_s,
-#ifdef CONFIG_TOUCHSCREEN_ATMEL_KNOCK_ON
 	t24_config_s,
-#endif
 	t25_config_s,
 //	t27_config_s,
 	t40_config_s,
@@ -278,7 +296,12 @@ static const u8 *mxt1188S_config[] = {
 	t73_config_s,
 	t77_config_s,
 	t79_config_s,
+#ifdef USE_FW_11AA
 	t82_config_s,
+#endif
+#ifdef CONFIG_TOUCHSCREEN_LGE_LPWG
+	t93_config_s,
+#endif
 	end_config_s
 };
 
@@ -299,70 +322,16 @@ static u8 t47_normal_config[] = { MXT_PROCI_STYLUS_T47, 1,
 static u8 t47_charger_config[] = { MXT_PROCI_STYLUS_T47, 1,
 	8, 2,
 };
- /*
-static u8 t46_normal_config[] = { MXT_SPT_CTECONFIG_T46, 1,
-	3, 24,
-};
 
-static u8 t46_charger_config[] = { MXT_SPT_CTECONFIG_T46, 1,
-	3, 16
-};
-
-static u8 t62_normal_config[] = { MXT_PROCG_NOISESUPPRESSION_T62, 18,
-	1, 0,
-	2, 16,
-	4, 3,
-	6, 16,
-	8, 15,
-	10, 0,
-	11, 0,
-	12, 0,
-	13, 0,
-	15, 0,
-	22, 32,
-	23, 10,
-	24, 63,
-	25, 8,
-	30, 0,
-	31, 0,
-	32, 0,
-	33, 0,
-};
-
-static u8 t62_charger_config[] = { MXT_PROCG_NOISESUPPRESSION_T62, 18,
-	1, 40,
-	2, 80,
-	4, 11,
-	6, 32,
-	8, 50,
-	10, 35,
-	11, 43,
-	12, 30,
-	13, 12,
-	15, 50,
-	22, 24,
-	23, 2,
-	24, 100,
-	25, 12,
-	30, 35,
-	31, 43,
-	32, 30,
-	33, 12,
-};
-*/
 static const u8 *mxt1188S_restore_config[] = {
 	t9_normal_config,
-//	t46_normal_config,
 	t47_normal_config,
-//	t62_normal_config,
 	end_config_s
 };
 
 static const u8 *mxt1188S_charger_config[] = {
 	t9_charger_config,
-//	t46_charger_config,
 	t47_charger_config,
-//	t62_charger_config,
 	end_config_s
 };
 
@@ -448,84 +417,167 @@ static const u8 *mxt1188S_unpen_config[] = {
 	end_config_s
 };
 
-#ifdef CONFIG_TOUCHSCREEN_ATMEL_KNOCK_ON
-static u8 t7_sus_config[] = { MXT_GEN_POWER_T7, 2,
+static u8 t7_sus_config[] = { MXT_GEN_POWER_T7,
+#ifdef USE_FW_11AA
+	3,
+#else
+	2,
+#endif
 	0, 64,
 	1, 12,
-//	2, 4
+#ifdef USE_FW_11AA
+	4, 1,
+#endif
 };
 
-static u8 t7_act_config[] = { MXT_GEN_POWER_T7, 2,
+static u8 t7_act_config[] = { MXT_GEN_POWER_T7,
+#ifdef USE_FW_11AA
+	3,
+#else
+	2,
+#endif
 	0, 32,
 	1, 9,
-//	2, 5
+#ifdef USE_FW_11AA
+	4, 0,
+#endif
 };
 
-static u8 t8_sus_config[] = { MXT_GEN_ACQUIRE_T8, 5,
+static u8 t8_sus_config[] = { MXT_GEN_ACQUIRE_T8,
+#ifdef USE_FW_11AA
+	7,
+#else
+	6,
+#endif
 	2, 12,
-	6, 255,
-	7, 1,
-	8, 0,
-	9, 0
+	4, 15,
+	6, 1,
+	7, 200,
+	8, 1,
+	9, 216,
+#ifdef USE_FW_11AA
+	14, 1,
+#endif
 };
 
-static u8 t8_act_config[] = { MXT_GEN_ACQUIRE_T8, 1,
-	2, 3
+static u8 t8_act_config[] = { MXT_GEN_ACQUIRE_T8,
+#ifdef USE_FW_11AA
+	3,
+#else
+	2,
+#endif
+	2, 3,
+	4, 0,
+#ifdef USE_FW_11AA
+	14, 0,
+#endif
 };
 
-static u8 t9_sus_config[] = { MXT_TOUCH_MULTI_T9, 11,
+static u8 t9_sus_config[] = { MXT_TOUCH_MULTI_T9,
+#ifdef USE_FW_11AA
+	18,  /* The number of register configuration */
+#else
+	11,  /* The number of register configuration */
+#endif
 	0, 129,
-	1, 10,
-	2, 11,
-	3, 7,
-	4, 22,
-	7, 70,
-	18, 146,
-	19, 04,
+	1, 2,
+	2, 2,
+	3, 23,
+	4, 40,
+	7, 60,
+#ifdef USE_FW_11AA
+	11, 150,	/* Movement hysteresis, initial */
+	12, 100,	/* Movement hysteresis, next */
+	14, 2,		/* Number of touch */
+#endif
+	18, 02,
+	19, 10,
 	20, 255,
-	21, 7,
+	21, 15,
 	30, 253,
+#ifdef USE_FW_11AA
+	35, 128, /* 0x80, CFG */
+	36, 197, /* 0xC5, MoveFilter2 */
+	39, 0,    /* Tracking thresholdscaling factor */
+	45, 0,    /* MRGTHR adjustment strength */
+#endif
 };
 
-static u8 t9_act_config[] = { MXT_TOUCH_MULTI_T9, 11,
+static u8 t9_act_config[] = { MXT_TOUCH_MULTI_T9,
+#ifdef USE_FW_11AA
+	18,  /* The number of register configuration */
+#else
+	11,  /* The number of register configuration */
+#endif
 	0, 139,
 	1, 0,
 	2, 0,
 	3, 27,
 	4, 44,
 	7, 50,
+#ifdef USE_FW_11AA
+	11, 8,  /* Movement hysteresis, initial */
+	12, 7,  /* Movement hysteresis, next */
+	14, 10, /* Number of touch */
+#endif
 	18, 255,
 	19, 15,
 	20, 255,
 	21, 15,
-	30, 50
+	30, 50,
+#ifdef USE_FW_11AA
+	35, 150,  /* 0x96, CFG */
+	36, 5,     /* 0x05, MoveFilter2 */
+	39, 110,  /* 0x6E, Tracking thresholdscaling factor */
+	45, 130,  /* 0x82, MRGTHR adjustment strength */
+#endif
 };
 
 static u8 t24_sus_config[] = { MXT_PROCI_ONETOUCH_T24, 1,
+#ifdef USE_FW_11AA
+	0, 15,
+#else
 	0, 3
+#endif
 };
 
 static u8 t24_act_config[] = { MXT_PROCI_ONETOUCH_T24, 1,
-	0, 0
+	0, 0,
 };
 
 static u8 t40_sus_config[] = {MXT_PROCI_GRIP_T40, 1,
-	0, 17,
+	0, 1,
 };
 
 static u8 t40_act_config[] = {MXT_PROCI_GRIP_T40, 1,
 	0, 0,
 };
 
-static u8 t42_sus_config[] = {MXT_PROCI_TOUCHSUPPRESSION_T42, 4,
-	0, 53,
-	2, 20,
-	3, 20,
+static u8 t42_sus_config[] = {MXT_PROCI_TOUCHSUPPRESSION_T42,
+#ifdef USE_FW_11AA
+	5,
+#else
+	4,
+#endif
+	0, 1,
+#ifdef USE_FW_11AA
+	1, 25,
+#endif
+	2, 40,
+	3, 40,
 	10, 6,
 };
 
-static u8 t42_act_config[] = {MXT_PROCI_TOUCHSUPPRESSION_T42, 4,
+static u8 t42_act_config[] = {MXT_PROCI_TOUCHSUPPRESSION_T42,
+#ifdef USE_FW_11AA
+	5,
+#else
+	4,
+#endif
 	0, 55,
+#ifdef USE_FW_11AA
+	1, 0,
+#endif
 	2, 70,
 	3, 80,
 	10, 0,
@@ -571,6 +623,37 @@ static u8 t65_act_config[] = {MXT_PROCI_LENSBENDING_T65, 1,
 	0, 1
 };
 
+#ifdef USE_FW_11AA
+static u8 t70_sus_config[] = {MXT_SPT_DYNAMICCONFIGURATIONCONTROLLER_T70, 12,
+	0, 1,
+	1, 2,
+	3, 61,
+	9, 4,
+	10, 1,
+	11, 2,
+	13, 24,
+	17, 5,
+	20, 1,
+	21, 13,
+	23, 24,
+	27, 6,
+};
+
+static u8 t70_act_config[] = {MXT_SPT_DYNAMICCONFIGURATIONCONTROLLER_T70, 12,
+	0, 0,
+	1, 0,
+	3, 0,
+	9, 0,
+	10, 0,
+	11, 0,
+	13, 0,
+	17, 0,
+	20, 0,
+	21, 0,
+	23, 0,
+	27, 0,
+};
+#endif
 
 static u8 t77_sus_config[] = {MXT_SPT_CTESCANCONFIG_T77, 1,
 	0, 9
@@ -580,20 +663,37 @@ static u8 t77_act_config[] = {MXT_SPT_CTESCANCONFIG_T77, 1,
 	0, 8
 };
 
+#ifdef CONFIG_TOUCHSCREEN_LGE_LPWG
+//17th bit in T93 is written number of udf's tab separately (data->g_tap_cnt).
+//When UDF mode is used, screen size in T9 is adjusted by current.
+static u8 t93_sus_config[] = {MXT_PROCI_TOUCH_SEQUENCE_LOGGER_T93, 1,
+	0, 15
+};
+
+static u8 t93_act_config[] = {MXT_PROCI_TOUCH_SEQUENCE_LOGGER_T93, 1,
+	0, 1
+};
+#endif
 
 static const u8 *mxt1188S_sus_config[] = {
 	t9_sus_config,
 	t7_sus_config,
 	t8_sus_config,
+	t46_sus_config,
+	t47_sus_config,
+	t62_sus_config,
+	t77_sus_config,
 	t24_sus_config,
 	t40_sus_config,
 	t42_sus_config,
-	t46_sus_config,
-	t47_sus_config,
-	t57_sus_config,
-	t62_sus_config,
+ 	t57_sus_config,
 	t65_sus_config,
-	t77_sus_config,
+#ifdef USE_FW_11AA
+	t70_sus_config,
+#endif
+#ifdef CONFIG_TOUCHSCREEN_LGE_LPWG
+	t93_act_config,
+#endif
 	end_config_s
 };
 
@@ -609,6 +709,9 @@ static const u8 *mxt1188S_act_config[] = {
 	t57_act_config,
 	t62_act_config,
 	t65_act_config,
+#ifdef USE_FW_11AA
+	t70_act_config,
+#endif
 	t77_act_config,
 	end_config_s
 };
@@ -623,9 +726,74 @@ static const u8 *mxt1188s_sus_charger_config[] = {
 	t46_sus_config,
 	t47_sus_config,
 	t57_sus_config,
+#ifdef USE_FW_11AA
+	t70_sus_config,
+#endif
+#ifdef CONFIG_TOUCHSCREEN_LGE_LPWG
+	t93_act_config,
+#endif
+	end_config_s
+};
+
+#ifdef CONFIG_TOUCHSCREEN_LGE_LPWG
+static const u8 *mxt1188S_udf_sus_config[] = {
+	t9_sus_config,
+	t7_sus_config,
+	t8_sus_config,
+	t46_sus_config,
+	t47_sus_config,
+	t62_sus_config,
+	t77_sus_config,
+	t24_act_config,
+	t40_sus_config,
+	t42_sus_config,
+ 	t57_sus_config,
+	t65_sus_config,
+#ifdef USE_FW_11AA
+	t70_sus_config,
+#endif
+	t93_sus_config,
+	end_config_s
+};
+
+static const u8 *mxt1188S_udf_act_config[] = {
+	t9_act_config,
+	t7_act_config,
+	t8_act_config,
+	t24_act_config,
+	t40_act_config,
+	t42_act_config,
+	t46_act_config,
+	t47_act_config,
+	t57_act_config,
+	t62_act_config,
+	t65_act_config,
+#ifdef USE_FW_11AA
+	t70_act_config,
+#endif
+	t77_act_config,
+	t93_act_config,
+	end_config_s
+};
+
+static const u8 *mxt1188s_udf_sus_charger_config[] = {
+	t9_sus_config,
+	t7_sus_config,
+	t8_sus_config,
+	t24_act_config,
+	t40_sus_config,
+	t42_sus_config,
+	t46_sus_config,
+	t47_sus_config,
+	t57_sus_config,
+#ifdef USE_FW_11AA
+	t70_sus_config,
+#endif
+      t93_sus_config,
 	end_config_s
 };
 #endif
+
 static struct mxt_platform_data touch_mxt1188S_pdata = {
 	.numtouch = MXT_MAX_NUM_TOUCHES,
 	.max_x = 4095, //1920
@@ -645,6 +813,11 @@ static struct mxt_platform_data touch_mxt1188S_pdata = {
 	.sus_config = mxt1188S_sus_config,
 	.sus_charger_config = mxt1188s_sus_charger_config,
 	.act_config = mxt1188S_act_config,
+#endif
+#ifdef CONFIG_TOUCHSCREEN_LGE_LPWG
+	.sus_udf_config = mxt1188S_udf_sus_config,
+	.sus_udf_charger_config = mxt1188s_udf_sus_charger_config,
+	.act_udf_config = mxt1188S_udf_act_config,
 #endif
 #ifdef CUST_A_TOUCH
 	.accuracy_filter_enable = 0,
