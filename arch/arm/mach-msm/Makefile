@@ -405,8 +405,6 @@ obj-$(CONFIG_CPU_FREQ_MSM) += cpufreq.o
 
 obj-$(CONFIG_ARCH_RANDOM) += early_random.o
 
-obj-$(CONFIG_INTELLI_PLUG) += intelli_plug.o
-
 obj-$(CONFIG_HAS_MACH_MEMUTILS) += memutils/
 
 obj-$(CONFIG_LCD_KCAL_STANDALONE) += msm_kcal_ctrl.o
